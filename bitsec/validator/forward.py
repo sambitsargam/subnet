@@ -19,7 +19,7 @@
 
 import bittensor as bt
 
-from bitsec.protocol import Dummy, prepare_protocol_synapse
+from bitsec.protocol import prepare_protocol_synapse
 from bitsec.validator.reward import get_rewards
 from bitsec.utils.uids import get_random_uids
 

@@ -18,6 +18,7 @@
 # DEALINGS IN THE SOFTWARE.
 
 
+import os
 import time
 
 # Bittensor
@@ -44,7 +45,10 @@ class Validator(BaseValidatorNeuron):
         bt.logging.info("load_state()")
         self.load_state()
 
-        # TODO(developer): Anything specific to your use case you can do here
+        # bitsec specific
+        
+        # load code samples to create challenges
+        self.sample_dir = os.path.join(os.path.dirname(__file__), '..', 'samples')
 
     async def forward(self):
         """
