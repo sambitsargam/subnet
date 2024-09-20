@@ -19,9 +19,9 @@
 
 import bittensor as bt
 
-from bitsec.protocol import prepare_protocol_synapse
+from bitsec.protocol import prepare_code_synapse
 from bitsec.validator.reward import get_rewards
-from bitsec.utils.data import get_solidity_sample, create_challenge
+from bitsec.utils.data import get_code_sample, create_challenge
 from bitsec.utils.uids import get_random_uids
 
 
@@ -46,10 +46,10 @@ async def forward(self):
     # get_random_uids is an example method, but you can replace it with your own.
     miner_uids = get_random_uids(self, k=self.config.neuron.sample_size)
 
-    solidity_code = get_solidity_sample()
-    bt.logging.info(f"got solidity code")
+    sample_code = get_code_sample()
+    bt.logging.info(f"got code")
 
-    challenge = create_challenge(solidity_code)
+    challenge = create_challenge(sample_code)
     bt.logging.info(f"created challenge")
 
     # The dendrite client queries the network.
@@ -57,7 +57,7 @@ async def forward(self):
         # Send the query to selected miner axons in the network.
         axons=[self.metagraph.axons[uid] for uid in miner_uids],
         # Construct a dummy query. This simply contains a single integer.
-        synapse=prepare_protocol_synapse(self.step),
+        synapse=prepare_code_synapse(code=challenge),
         deserialize=True,
     )
 
@@ -66,8 +66,8 @@ async def forward(self):
 
     # TODO(developer): Define how the validator scores responses.
     # Adjust the scores based on responses from miners.
-    rewards = get_rewards(self, query=self.step, responses=responses)
+    # rewards = get_rewards(self, query=self.step, responses=responses)
 
-    bt.logging.info(f"Scored responses: {rewards}")
+    # bt.logging.info(f"Scored responses: {rewards}")
     # Update the scores based on the rewards. You may want to define your own update_scores function for custom behavior.
-    self.update_scores(rewards, miner_uids)
+    # self.update_scores(rewards, miner_uids)
