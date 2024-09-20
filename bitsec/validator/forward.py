@@ -21,6 +21,7 @@ import bittensor as bt
 
 from bitsec.protocol import prepare_protocol_synapse
 from bitsec.validator.reward import get_rewards
+from bitsec.utils.data import get_solidity_sample, create_challenge
 from bitsec.utils.uids import get_random_uids
 
 
@@ -33,7 +34,7 @@ async def forward(self):
     1. Sample miner UIDs
     2. Get a code sample.
     3. Apply random data augmentation to turn the code sample into a challenge.
-    4. Prepare an ImageSynapse
+    4. Prepare a Synapse
     5. Query miner axons
     6. Log results, including challenge and miner responses
     7. Compute rewards and update scores
@@ -42,9 +43,14 @@ async def forward(self):
         self (:obj:`bittensor.neuron.Neuron`): The neuron object which contains all the necessary state for the validator.
 
     """
-    # TODO(developer): Define how the validator selects a miner to query, how often, etc.
     # get_random_uids is an example method, but you can replace it with your own.
     miner_uids = get_random_uids(self, k=self.config.neuron.sample_size)
+
+    solidity_code = get_solidity_sample()
+    bt.logging.info(f"got solidity code")
+
+    challenge = create_challenge(solidity_code)
+    bt.logging.info(f"created challenge")
 
     # The dendrite client queries the network.
     responses = await self.dendrite(

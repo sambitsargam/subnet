@@ -46,9 +46,6 @@ class Validator(BaseValidatorNeuron):
         self.load_state()
 
         # bitsec specific
-        
-        # load code samples to create challenges
-        self.sample_dir = os.path.join(os.path.dirname(__file__), '..', 'samples')
 
     async def forward(self):
         """
