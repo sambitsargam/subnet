@@ -20,24 +20,24 @@
 import typing
 import bittensor as bt
 
-# TODO(developer): Rewrite with your protocol definition.
-
 # This is the protocol for the dummy miner and validator.
 # It is a simple request-response protocol where the validator sends a request
 # to the miner, and the miner responds with a dummy response.
 
 # ---- miner ----
 # Example usage:
-#   def dummy( synapse: Dummy ) -> Dummy:
-#       synapse.dummy_output = synapse.dummy_input + 1
+#   def miner_forward( synapse: CodeSynapse ) -> CodeSynapse:
+#       ...
+#       synapse.predictions = vulnerability_detection_model_outputs
 #       return synapse
-#   axon = bt.axon().attach( dummy ).serve(netuid=...).start()
+#   axon = bt.axon().attach( miner_forward ).serve(netuid=...).start()
 
 # ---- validator ---
 # Example usage:
 #   dendrite = bt.dendrite()
-#   dummy_output = dendrite.query( Dummy( dummy_input = 1 ) )
-#   assert dummy_output == 2
+#   codes = [code_1, ..., code_n]
+#   predictions = dendrite.query( CodeSynapse( codes = codes ) )
+#   assert len(predictions) == len(codes)
 
 class Dummy(bt.Synapse):
     """
