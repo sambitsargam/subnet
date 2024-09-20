@@ -39,7 +39,6 @@ import bittensor as bt
 #   dummy_output = dendrite.query( Dummy( dummy_input = 1 ) )
 #   assert dummy_output == 2
 
-
 class Dummy(bt.Synapse):
     """
     A simple dummy protocol representation which uses bt.Synapse as its base.
@@ -74,3 +73,6 @@ class Dummy(bt.Synapse):
         5
         """
         return self.dummy_output
+
+def prepare_protocol_synapse(dummy_input: int) -> Dummy:
+    return Dummy(dummy_input=dummy_input)
