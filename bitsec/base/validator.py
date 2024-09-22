@@ -19,6 +19,7 @@
 
 
 import copy
+import time
 import numpy as np
 import asyncio
 import argparse
@@ -28,13 +29,13 @@ import bittensor as bt
 from typing import List, Union
 from traceback import print_exception
 
-from template.base.neuron import BaseNeuron
-from template.base.utils.weight_utils import (
+from bitsec.base.neuron import BaseNeuron
+from bitsec.base.utils.weight_utils import (
     process_weights_for_netuid,
     convert_weights_and_uids_for_emit,
 )  # TODO: Replace when bittensor switches to numpy
-from template.mock import MockDendrite
-from template.utils.config import add_validator_args
+from bitsec.mock import MockDendrite
+from bitsec.utils.config import add_validator_args
 
 
 class BaseValidatorNeuron(BaseNeuron):
@@ -154,6 +155,7 @@ class BaseValidatorNeuron(BaseNeuron):
                 self.sync()
 
                 self.step += 1
+                time.sleep(60) # run every 60s
 
         # If someone intentionally stops the validator, it'll safely terminate operations.
         except KeyboardInterrupt:

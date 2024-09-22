@@ -17,10 +17,20 @@
 # OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 # DEALINGS IN THE SOFTWARE.
 
-import typing
 import bittensor as bt
+import pydantic
 
-# TODO(developer): Rewrite with your protocol definition.
+def prepare_code_synapse(code: str):
+    """
+    Prepares code for use with CodeSynapse object.
+
+    Args:
+        code (str): The input to be prepared.
+
+    Returns:
+        CodeSynapse: An instance of CodeSynapse containing the encoded code and a default prediction value.
+    """
+    return CodeSynapse(code=code)
 
 # This is the protocol for the dummy miner and validator.
 # It is a simple request-response protocol where the validator sends a request
@@ -28,49 +38,48 @@ import bittensor as bt
 
 # ---- miner ----
 # Example usage:
-#   def dummy( synapse: Dummy ) -> Dummy:
-#       synapse.dummy_output = synapse.dummy_input + 1
+#   def miner_forward( synapse: CodeSynapse ) -> CodeSynapse:
+#       ...
+#       synapse.predictions = vulnerability_detection_model_outputs
 #       return synapse
-#   axon = bt.axon().attach( dummy ).serve(netuid=...).start()
+#   axon = bt.axon().attach( miner_forward ).serve(netuid=...).start()
 
 # ---- validator ---
 # Example usage:
 #   dendrite = bt.dendrite()
-#   dummy_output = dendrite.query( Dummy( dummy_input = 1 ) )
-#   assert dummy_output == 2
+#   codes = [code_1, ..., code_n]
+#   predictions = dendrite.query( CodeSynapse( codes = codes ) )
+#   assert len(predictions) == len(codes)
 
-
-class Dummy(bt.Synapse):
+class CodeSynapse(bt.Synapse):
     """
-    A simple dummy protocol representation which uses bt.Synapse as its base.
-    This protocol helps in handling dummy request and response communication between
+    This protocol helps in handling code/prediction request and response communication between
     the miner and the validator.
 
     Attributes:
-    - dummy_input: An integer value representing the input request sent by the validator.
-    - dummy_output: An optional integer value which, when filled, represents the response from the miner.
+    - code: a str of code
+    - prediction: a float indicating the probabilty that the code has a critical / severe vulnerability.
+        >.5 is considered generated/modified, <= 0.5 is considered real.
     """
 
     # Required request input, filled by sending dendrite caller.
-    dummy_input: int
+    code: str
 
     # Optional request output, filled by receiving axon.
-    dummy_output: typing.Optional[int] = None
+    prediction: float = pydantic.Field(
+        title="Prediction",
+        description="Probability that the code has a critical / severe vulnerability",
+        default=-1.,
+        frozen=False
+    )
 
-    def deserialize(self) -> int:
+    def deserialize(self) -> float:
         """
-        Deserialize the dummy output. This method retrieves the response from
-        the miner in the form of dummy_output, deserializes it and returns it
-        as the output of the dendrite.query() call.
+        Deserialize the output. This method retrieves the response from
+        the miner, deserializes it and returns it as the output of the dendrite.query() call.
 
         Returns:
-        - int: The deserialized response, which in this case is the value of dummy_output.
-
-        Example:
-        Assuming a Dummy instance has a dummy_output value of 5:
-        >>> dummy_instance = Dummy(dummy_input=4)
-        >>> dummy_instance.dummy_output = 5
-        >>> dummy_instance.deserialize()
-        5
+        - float: The deserialized miner prediction
+        prediction probabilities
         """
-        return self.dummy_output
+        return self.prediction
