@@ -19,6 +19,7 @@
 
 import bittensor as bt
 import pydantic
+from typing import List, Tuple
 
 def prepare_code_synapse(code: str):
     """
@@ -51,6 +52,21 @@ def prepare_code_synapse(code: str):
 #   predictions = dendrite.query( CodeSynapse( codes = codes ) )
 #   assert len(predictions) == len(codes)
 
+
+class Vulnerability(pydantic.BaseModel):
+    int_ranges: List[Tuple[int, int]] = pydantic.Field(
+        description="An array of lines of code ranges",
+        default=[],
+        min_items=0,  # Do not need to provide range
+        max_items=10,  # Max of 10 ranges
+    )
+
+    vulnerability_type: str = pydantic.Field(
+        default="",
+        description="Summary of vulnerability type, succint answers favored.",
+    )
+    
+
 class CodeSynapse(bt.Synapse):
     """
     This protocol helps in handling code/prediction request and response communication between
@@ -72,6 +88,17 @@ class CodeSynapse(bt.Synapse):
         default=-1.,
         frozen=False
     )
+
+    # Optional request output, filled by receiving axon.
+    vulnerability: List[Vulnerability] = pydantic.Field(
+        title="Vulnerabilities",
+        description="Description of each vulnerability found",
+        default=[],
+        min_items=0,  # Do not need to provide range
+        max_items=10,  # Max of 10 ranges
+        frozen=False
+    )
+
 
     def deserialize(self) -> float:
         """
