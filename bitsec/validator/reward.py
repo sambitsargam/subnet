@@ -16,12 +16,13 @@
 # THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
 # OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 # DEALINGS IN THE SOFTWARE.
+from bitsec.protocol import PredictionResponse
 import numpy as np
-from typing import List
+from typing import List, Tuple
 import bittensor as bt
 
 
-def reward(query: int, response: int) -> float:
+def reward(query: int, response: PredictionResponse) -> float:
     """
     Reward the miner response to the dummy request. This method returns a reward
     value for the miner, which is used to update the miner's score.
@@ -29,21 +30,22 @@ def reward(query: int, response: int) -> float:
     Returns:
     - float: The reward value for the miner.
     """
-    bt.logging.info(f"In rewards, query val: {query}, response val: {response}, rewards val: {1.0 if response == query * 2 else 0}")
+    bt.logging.info(f"response: {response}")
+    bt.logging.info(f"In rewards, query val: {query}, response val: {response.prediction}, rewards val: {1.0 if response.prediction == 1.0 else 0}")
     return 1.0 if response == 1.0 else 0
 
 
 def get_rewards(
     self,
     query: int,
-    responses: List[float],
+    responses: List[Tuple],
 ) -> np.ndarray:
     """
     Returns an array of rewards for the given query and responses.
 
     Args:
     - query (int): The query sent to the miner.
-    - responses (List[float]): A list of responses from the miner.
+    - responses (List[Tuple]): A list of responses from the miner.
 
     Returns:
     - np.ndarray: An array of rewards for the given query and responses.
@@ -51,5 +53,5 @@ def get_rewards(
     # Get all the reward results by iteratively calling your reward() function.
     
     return np.array(
-        [reward(query, response) for response in responses]
+        [reward(query, PredictionResponse.from_tuple(response)) for response in responses]
     )

@@ -26,7 +26,7 @@ import bitsec
 
 # import base miner class which takes care of most of the boilerplate
 from bitsec.base.miner import BaseMinerNeuron
-from bitsec.protocol import CodeSynapse
+from bitsec.protocol import CodeSynapse, PredictionResponse
 from bitsec.miner.predict import predict
 
 
@@ -60,12 +60,13 @@ class Miner(BaseMinerNeuron):
         """
         try:
             challenge = synapse.code
-            synapse.prediction = predict(challenge)
+            synapse.response = predict(challenge)
         except Exception as e:
             bt.logging.error("Error performing inference")
             bt.logging.error(e)
 
-        bt.logging.info(f"PREDICTION: {synapse.prediction}")
+        bt.logging.info(f"PREDICTION: {synapse.response.prediction}")
+        bt.logging.info(f"VULNERABILITIES: {synapse.response.vulnerabilities}")
         return synapse
 
     async def blacklist(

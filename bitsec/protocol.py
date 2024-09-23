@@ -53,6 +53,7 @@ def prepare_code_synapse(code: str):
 #   assert len(predictions) == len(codes)
 
 
+# Vulnerability is a lines_of_code_range in the codebase with description
 class Vulnerability(pydantic.BaseModel):
     int_ranges: List[Tuple[int, int]] = pydantic.Field(
         description="An array of lines of code ranges",
@@ -66,6 +67,17 @@ class Vulnerability(pydantic.BaseModel):
         description="Summary of vulnerability type, succint answers favored.",
     )
     
+# PredictionResponse is the response from the Miner
+class PredictionResponse(pydantic.BaseModel):
+    prediction: float = pydantic.Field(..., description="Probability of vulnerability")
+    vulnerabilities: List[Vulnerability] = pydantic.Field(default_factory=list, description="List of detected vulnerabilities")
+
+    @classmethod
+    def from_tuple(cls, data: tuple[float, List[Vulnerability]]) -> 'PredictionResponse':
+        return cls(prediction=data[0], vulnerabilities=data[1])
+
+    def to_tuple(self) -> tuple[float, List[Vulnerability]]:
+        return (self.prediction, self.vulnerabilities)
 
 class CodeSynapse(bt.Synapse):
     """
@@ -82,31 +94,19 @@ class CodeSynapse(bt.Synapse):
     code: str
 
     # Optional request output, filled by receiving axon.
-    prediction: float = pydantic.Field(
-        title="Prediction",
-        description="Probability that the code has a critical / severe vulnerability",
-        default=-1.,
+    response: PredictionResponse = pydantic.Field(
+        default_factory=lambda: PredictionResponse(prediction=-1.0, vulnerabilities=[]),
+        title="Miner Prediction",
+        description="Prediction response containing probability and vulnerabilities",
         frozen=False
     )
 
-    # Optional request output, filled by receiving axon.
-    vulnerabilities: List[Vulnerability] = pydantic.Field(
-        title="Vulnerabilities",
-        description="Description of each vulnerability found",
-        default=[],
-        min_items=0,  # Do not need to provide range
-        max_items=10,  # Max of 10 ranges
-        frozen=False
-    )
-
-
-    def deserialize(self) -> float:
+    def deserialize(self) -> PredictionResponse:
         """
         Deserialize the output. This method retrieves the response from
         the miner, deserializes it and returns it as the output of the dendrite.query() call.
 
         Returns:
-        - float: The deserialized miner prediction
-        prediction probabilities
+        - PredictionResponse: The deserialized miner prediction and vulnerabilities
         """
-        return self.prediction
+        return self.response.to_tuple()
