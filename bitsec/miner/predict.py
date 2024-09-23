@@ -1,6 +1,15 @@
+from bitsec.protocol import PredictionResponse
 import numpy as np
+import openai
 
-def predict(code: str) -> float:
+base_prompt = ""
+
+## Predicting vulnerabilities is a multifaceted task. Here are some example improvements:
+# - train custom model
+# - use a more powerful foundational model
+# - improve prompt
+# - increase inference time compute
+def predict(code: str) -> PredictionResponse:
     """
     Perform prediction. You may need to modify this if you train a custom model.
 
@@ -12,6 +21,5 @@ def predict(code: str) -> float:
     """
     
 
-    " dummy function that predicts 1 or 0 randomly"
-    # return 1 if np.random.rand() > 0.5 else 0
-    return 1.0
+    "TODO fix. return 1.0 for now to stabilize validator input."
+    return PredictionResponse.from_tuple([1.0, []])
