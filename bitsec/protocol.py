@@ -90,7 +90,7 @@ class CodeSynapse(bt.Synapse):
     )
 
     # Optional request output, filled by receiving axon.
-    vulnerability: List[Vulnerability] = pydantic.Field(
+    vulnerabilities: List[Vulnerability] = pydantic.Field(
         title="Vulnerabilities",
         description="Description of each vulnerability found",
         default=[],
