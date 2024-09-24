@@ -32,7 +32,7 @@ class CodeAPI(SubnetsAPI):
 
     def process_responses(
         self, responses: List[Union["bt.Synapse", Any]]
-    ) -> List[int]:
+    ) -> List[PredictionResponse]:
         outputs = []
         for response in responses:
             if response.dendrite.status_code != 200:
