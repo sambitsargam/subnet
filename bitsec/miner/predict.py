@@ -9,6 +9,7 @@ base_prompt = ""
 # - use a more powerful foundational model
 # - improve prompt
 # - increase inference time compute
+# - augmented static analysis output
 def predict(code: str) -> PredictionResponse:
     """
     Perform prediction. You may need to modify this if you train a custom model.
@@ -17,7 +18,7 @@ def predict(code: str) -> PredictionResponse:
         code (str): The input str is a challenge that either has a severe code vulnerability or does not.
 
     Returns:
-        float: The predicted output value.
+        PredictionResponse: The predicted output value and list of vulnerabilities.
     """
     
 
