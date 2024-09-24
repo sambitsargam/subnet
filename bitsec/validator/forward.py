@@ -56,7 +56,6 @@ async def forward(self):
     responses = await self.dendrite(
         # Send the query to selected miner axons in the network.
         axons=[self.metagraph.axons[uid] for uid in miner_uids],
-        # Construct a dummy query. This simply contains a single integer.
         synapse=prepare_code_synapse(code=challenge),
         deserialize=True,
     )
