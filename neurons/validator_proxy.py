@@ -6,8 +6,11 @@ import bittensor as bt
 import uvicorn
 import os
 import asyncio
+import random
+import numpy as np
+import socket
 
-from bitsec.protocol import CodeSynapse
+from bitsec.protocol import CodeSynapse, prepare_code_synapse
 from bitsec.utils.uids import get_random_uids
 from bitsec.validator.proxy import ProxyCounter
 
@@ -138,24 +141,27 @@ class ValidatorProxy:
 
         payload = await request.json()
 
-        # if "seed" not in payload:
-        #     payload["seed"] = random.randint(0, 1e9)
+        if "seed" not in payload:
+            payload["seed"] = random.randint(0, 1e9)
 
-        # metagraph = self.validator.metagraph
+        metagraph = self.validator.metagraph
+        bt.logging.info(f"metagraph: {metagraph}")
 
-        # miner_uids = self.validator.last_responding_miner_uids
-        # if len(miner_uids) == 0:
-        #     bt.logging.warning("[ORGANIC] No recent miner uids found, sampling random uids")
-        #     miner_uids = get_random_uids(self.validator, k=self.validator.config.neuron.sample_size)
+        miner_uids = self.validator.last_responding_miner_uids
+        if len(miner_uids) == 0:
+            bt.logging.warning("[ORGANIC] No recent miner uids found, sampling random uids")
+            miner_uids = get_random_uids(self.validator, k=self.validator.config.neuron.sample_size)
 
-        # bt.logging.info(f"[ORGANIC] Querying {len(miner_uids)} miners...")
-        # predictions = await self.dendrite(
-        #     axons=[metagraph.axons[uid] for uid in miner_uids],
-    	  #   synapse=CodeSynapse(code=payload['code'], prediction=-1),
-        #     deserialize=True
-        # )
+        bt.logging.info(f"[ORGANIC] Querying {len(miner_uids)} miners...")
+        responses = await self.dendrite(
+            # Send the query to selected miner axons in the network.
+            axons=[metagraph.axons[uid] for uid in miner_uids],
+            synapse=prepare_code_synapse(code=payload['code']),
+            deserialize=True,
+        )
+        
 
-        # bt.logging.info(f"[ORGANIC] {predictions}")
+        bt.logging.info(f"[ORGANIC] {responses}")
         # valid_pred_idx = np.array([i for i, v in enumerate(predictions) if v != -1.])
         # if len(valid_pred_idx) > 0:
         #     valid_preds = np.array(predictions)[valid_pred_idx]
