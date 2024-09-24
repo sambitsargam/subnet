@@ -24,10 +24,9 @@ import time
 # Bittensor
 import bittensor as bt
 
-# import base validator class which takes care of most of the boilerplate
-from bitsec.base.validator import BaseValidatorNeuron
-# Bittensor Validator Template:
+from neurons.validator_proxy import ValidatorProxy
 from bitsec.validator import forward
+from bitsec.base.validator import BaseValidatorNeuron
 
 
 class Validator(BaseValidatorNeuron):
@@ -45,7 +44,10 @@ class Validator(BaseValidatorNeuron):
         bt.logging.info("load_state()")
         self.load_state()
 
-        # bitsec specific
+        self.last_responding_miner_uids = []
+        self.validator_proxy = ValidatorProxy(self)
+
+        self._fake_prob = self.config.get('fake_prob', 0.5)
 
     async def forward(self):
         """
@@ -64,5 +66,5 @@ class Validator(BaseValidatorNeuron):
 if __name__ == "__main__":
     with Validator() as validator:
         while True:
-            bt.logging.info(f"Validator running... {time.time()}")
+            bt.logging.info(f"Validator running | uid {validator.uid} | {time.time()}")
             time.sleep(5)
