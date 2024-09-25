@@ -1,3 +1,5 @@
+# run `python scripts/check_code_via_api.py`
+
 import requests
 import json
 
