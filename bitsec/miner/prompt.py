@@ -34,17 +34,38 @@ def code_to_vulns(code: str) -> PredictionResponse:
     Returns:
         str: The vulnerability analysis report.
     """
-    analysis = ""  # Initialize the analysis variable
+    analysis = ""  # Initialize analysis
     try:
         bt.logging.info("analyzing code")
         analysis = analyze_code(code)
         bt.logging.info("Vulnerability Analysis Report:")
         bt.logging.info(f"Analysis:\n{analysis}")
-    except Exception as e:
-        bt.logging.error(f"An error occurred during code analysis: {e}")
 
-    # TODO add vulns
-    return PredictionResponse.from_tuple([1.0, []])
+        # TODO make formatting prompt
+        # TODO retry and fix loop to create PredictionResponse structured outputs
+        prediction_input = {
+            "prediction": 0.8,
+            "vulnerabilities": [
+                {
+                    "int_ranges": [],
+                    "vulnerability_type": "Reentrancy Attack"
+                },
+                {
+                    "int_ranges": [],
+                    "vulnerability_type": "Lack of Ether Value Check"
+                },
+                {
+                    "int_ranges": [],
+                    "vulnerability_type": "No Access Control on mint()"
+                }
+            ]
+        }
+        prediction_response = PredictionResponse.model_validate(prediction_input)
+        bt.logging.info(f"PredictionResponse: {pr}")
+    except Exception as e:
+        bt.logging.error(f"An error occurred prompt generating the prediction response: {e}")
+
+    return prediction_response
 
 # Define the prompt template outside the function for configurability
 PROMPT_TEMPLATE = """
