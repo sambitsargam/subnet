@@ -26,7 +26,6 @@ import bitsec
 
 # import base miner class which takes care of most of the boilerplate
 from bitsec.base.miner import BaseMinerNeuron
-from bitsec.protocol import CodeSynapse, PredictionResponse
 from bitsec.miner.predict import predict
 
 
