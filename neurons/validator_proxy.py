@@ -162,26 +162,28 @@ class ValidatorProxy:
         
 
         bt.logging.info(f"[ORGANIC] {responses}")
-        # valid_pred_idx = np.array([i for i, v in enumerate(predictions) if v != -1.])
-        # if len(valid_pred_idx) > 0:
-        #     valid_preds = np.array(predictions)[valid_pred_idx]
-        #     valid_pred_uids = np.array(miner_uids)[valid_pred_idx]
-        #     if len(valid_preds) > 0:
-        #         self.proxy_counter.update(is_success=True)
-        #         self.proxy_counter.save()
-        #         data = {
-        #             'uids': [int(uid) for uid in valid_pred_uids],
-        #             'preds': [float(p) for p in list(valid_preds)],
-        #             'ranks': [float(self.validator.metagraph.R[uid]) for uid in valid_pred_uids],
-        #             'incentives': [float(self.validator.metagraph.I[uid]) for uid in valid_pred_uids],
-        #             'emissions': [float(self.validator.metagraph.E[uid]) for uid in valid_pred_uids],
-        #             'fqdn': socket.getfqdn()
-        #         }
-        #         return data
 
-        # self.proxy_counter.update(is_success=False)
-        # self.proxy_counter.save()
-        # return HTTPException(status_code=500, detail="No valid response received")
+        # return predictions from miners
+        valid_pred_idx = np.array([i for i, v in enumerate(responses) if v.prediction != -1.])
+        if len(valid_pred_idx) > 0:
+            valid_preds = np.array(responses)[valid_pred_idx]
+            valid_pred_uids = np.array(miner_uids)[valid_pred_idx]
+            if len(valid_preds) > 0:
+                self.proxy_counter.update(is_success=True)
+                self.proxy_counter.save()
+                data = {
+                    'uids': [int(uid) for uid in valid_pred_uids],
+                    'preds': [pred.to_tuple() for pred in valid_preds],
+                    'ranks': [float(self.validator.metagraph.R[uid]) for uid in valid_pred_uids],
+                    'incentives': [float(self.validator.metagraph.I[uid]) for uid in valid_pred_uids],
+                    'emissions': [float(self.validator.metagraph.E[uid]) for uid in valid_pred_uids],
+                    'fqdn': socket.getfqdn()
+                }
+                return data
+
+        self.proxy_counter.update(is_success=False)
+        self.proxy_counter.save()
+        return HTTPException(status_code=500, detail="No valid response received")
 
     async def get_self(self):
         return self
