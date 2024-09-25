@@ -2,11 +2,11 @@
 # This example uses a basic prompt template for demonstration purposes
 
 import openai
+import json
 from openai import OpenAI
 from bitsec.protocol import PredictionResponse
 import bittensor as bt
 import os
-from typing import Optional
 from tenacity import (
     retry,
     stop_after_attempt,
@@ -14,60 +14,39 @@ from tenacity import (
     retry_if_exception_type
 )
 
-# Set OpenAI API key
+# OpenAI API key config
 if not os.getenv("OPENAI_API_KEY"):
     bt.logging.error("OpenAI API key is not set. Please set the 'OPENAI_API_KEY' environment variable.")
     raise ValueError("OpenAI API key is not set.")
 
-client = OpenAI(
-    # This is the default and can be omitted
-    api_key=os.getenv("OPENAI_API_KEY"),
-)
+client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
-def code_to_vulns(code: str) -> PredictionResponse:
-    """
-    Analyzes the provided code for vulnerabilities using OpenAI's GPT-4o1 model.
+# Default parameters
+DEFAULT_MODEL = "gpt-4o-mini-2024-07-18"
+DEFAULT_TEMPERATURE = 0.7
+DEFAULT_MAX_TOKENS = 1000
 
-    Args:
-        code (str): The code to analyze.
-
-    Returns:
-        str: The vulnerability analysis report.
-    """
-    analysis = ""  # Initialize analysis
-    try:
-        bt.logging.info("analyzing code")
-        analysis = analyze_code(code)
-        bt.logging.info("Vulnerability Analysis Report:\n{analysis}")
-        # TODO retry and fix loop to create PredictionResponse structured outputs
-        prediction_input = format_analysis(analysis)
-        prediction_response = PredictionResponse.model_validate(prediction_input)
-        bt.logging.info(f"PredictionResponse: {prediction_response}")
-    except Exception as e:
-        bt.logging.error(f"An error occurred prompt generating the prediction response: {e}")
-
-    return prediction_response
-
+# Templates for prompts
 VULN_PROMPT_TEMPLATE = """
 ### Instructions:
-Thoroughly scan the code line by line for potentially flawed logic or problematic code related to security vulnerabilities.
+Thoroughly scan the code line by line for potentially flawed logic or problematic code that could cause security vulnerabilities.
 
 ### Code:
 {code}
 
 List vulnerabilities and possible ways for potential financial loss.
-Vulnerability #1:
 """
 
 FORMAT_RESULTS_TEMPLATE = """
-Analyze the following text describing vulnerabilities in smart contract code. 
-Create a structured vulnerability report in the form of a Python dictionary that can be parsed into a PredictionResponse object. The dictionary should have two keys: 
-1. 'prediction': A float 0.0 or 1.0 representing the presence of a vulnerability or not. 0.0 if no vulnerabilities found, or 1.0 if 1 or more vulnerabilities found.
-2. 'vulnerabilities': A list of dictionaries, each representing a Vulnerability object with these keys: 
-- 'int_ranges': A list of integer tuples representing affected code line ranges. Use an empty list if no specific lines are mentioned. 
-- 'vulnerability_type': A concise string summarizing the vulnerability type.
+Analyze the following text describing vulnerabilities in smart contract code. Create a structured vulnerability report in the form of a JSON object that can be parsed into a PredictionResponse object. The JSON object should have two keys:
 
-Provide only the Python dictionary in your response, without any additional explanation. Ensure the output can be directly parsed into the PredictionResponse class. 
+1. 'prediction': A float between 0 and 1 representing the overall probability of vulnerability. Base this on the severity and number of vulnerabilities found.
+
+2. 'vulnerabilities': A list of dictionaries, each representing a Vulnerability object with these keys:
+   - 'int_ranges': A list of integer tuples representing affected code line ranges. Use an empty list if no specific lines are mentioned.
+   - 'vulnerability_type': A concise string summarizing the vulnerability type.
+
+Provide only the JSON object in your response, without any additional explanation. Ensure the output can be directly parsed into the PredictionResponse class.
 
 Here's the text to analyze:
 
@@ -86,14 +65,15 @@ retryable_exceptions = (
     wait=wait_exponential(multiplier=1, min=4, max=10),
     retry=retry_if_exception_type(retryable_exceptions)
 )
+
 def analyze_code(
     code: str,
-    model: str = "gpt-4o-mini-2024-07-18",
-    temperature: float = 0.7,
-    max_tokens: int = 1000
+    model: str = DEFAULT_MODEL,
+    temperature: float = DEFAULT_TEMPERATURE,
+    max_tokens: int = DEFAULT_MAX_TOKENS
 ) -> str:
     """
-    Analyzes the provided code for vulnerabilities using OpenAI's ChatCompletion API.
+    Calls OpenAI API to analyze provided code for vulnerabilities.
 
     Args:
         code (str): The code to analyze.
@@ -105,31 +85,26 @@ def analyze_code(
         str: The analysis result from the model.
     """
     prompt = VULN_PROMPT_TEMPLATE.format(code=code)
-
     try:
         response = client.chat.completions.create(
-            messages=[
-                {
-                    "role": "system",
-                    "content": prompt,
-                }
-            ],
+            messages=[{"role": "system", "content": prompt}],
             model=model,
             temperature=temperature,
             max_tokens=max_tokens
         )
-        return response.choices[0].message.content
+        return response.choices[0].message.content.strip()
     except Exception as e:
-        bt.logging.error(f"OpenAI API error: {e}")
+        bt.logging.error(f"Failed to analyze code: {e}")
         raise
 
-def format_analysis(analysis: str,
-    model: str = "gpt-4o-mini-2024-07-18",
-    temperature: float = 0.7,
-    max_tokens: int = 1000
-    ) -> str:
+def format_analysis(
+    analysis: str,
+    model: str = DEFAULT_MODEL,
+    temperature: float = DEFAULT_TEMPERATURE,
+    max_tokens: int = DEFAULT_MAX_TOKENS
+) -> str:
     """
-    Formats analysis report to fit into PredictionResponse
+    Formats the vulnerability analysis into a structured JSON response: PredictionResponse.
 
     Args:
         analysis (str): The text to format.
@@ -144,17 +119,44 @@ def format_analysis(analysis: str,
 
     try:
         response = client.chat.completions.create(
-            messages=[
-                {
-                    "role": "system",
-                    "content": prompt,
-                }
-            ],
+            messages=[{"role": "system", "content": prompt}],
             model=model,
             temperature=temperature,
             max_tokens=max_tokens
         )
         return response.choices[0].message.content
     except Exception as e:
-        bt.logging.error(f"OpenAI API error: {e}")
+        bt.logging.error(f"Failed to format analysis: {e}")
+        raise
+
+
+def code_to_vulns(code: str) -> PredictionResponse:
+    """
+    Main function to analyze code and format the results into a PredictionResponse.
+
+    Args:
+        code (str): The code to analyze.
+
+    Returns:
+        PredictionResponse: The structured vulnerability report.
+    """
+    try:
+        bt.logging.info("analyzing code")
+        analysis = analyze_code(code)
+        bt.logging.info("Analysis result:\n{analysis}")
+
+        formatted_result = format_analysis(analysis)
+        bt.logging.debug(f"Formatted result: {formatted_result}")
+
+        try:
+            formatted_result_dict = json.loads(formatted_result)
+        except json.JSONDecodeError as e:
+            bt.logging.error(f"Failed to parse formatted result as JSON: {e}")
+            raise
+
+        prediction_response = PredictionResponse.model_validate(formatted_result_dict)
+        bt.logging.info(f"Analysis complete. Result: {prediction_response}")
+        return prediction_response
+    except Exception as e:
+        bt.logging.error(f"An error occurred during analysis: {e}")
         raise
