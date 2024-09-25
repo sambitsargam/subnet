@@ -38,46 +38,40 @@ def code_to_vulns(code: str) -> PredictionResponse:
     try:
         bt.logging.info("analyzing code")
         analysis = analyze_code(code)
-        bt.logging.info("Vulnerability Analysis Report:")
-        bt.logging.info(f"Analysis:\n{analysis}")
-
-        # TODO make formatting prompt
+        bt.logging.info("Vulnerability Analysis Report:\n{analysis}")
         # TODO retry and fix loop to create PredictionResponse structured outputs
-        prediction_input = {
-            "prediction": 0.8,
-            "vulnerabilities": [
-                {
-                    "int_ranges": [],
-                    "vulnerability_type": "Reentrancy Attack"
-                },
-                {
-                    "int_ranges": [],
-                    "vulnerability_type": "Lack of Ether Value Check"
-                },
-                {
-                    "int_ranges": [],
-                    "vulnerability_type": "No Access Control on mint()"
-                }
-            ]
-        }
+        prediction_input = format_analysis(analysis)
         prediction_response = PredictionResponse.model_validate(prediction_input)
-        bt.logging.info(f"PredictionResponse: {pr}")
+        bt.logging.info(f"PredictionResponse: {prediction_response}")
     except Exception as e:
         bt.logging.error(f"An error occurred prompt generating the prediction response: {e}")
 
     return prediction_response
 
-# Define the prompt template outside the function for configurability
-PROMPT_TEMPLATE = """
+VULN_PROMPT_TEMPLATE = """
 ### Instructions:
-Write a brief summary of what the code does.
 Thoroughly scan the code line by line for potentially flawed logic or problematic code related to security vulnerabilities.
 
 ### Code:
 {code}
 
-List vulnerabilities and possible ways for potential financial loss. Ignore "Known Vulnerabilities" and find new ones.
+List vulnerabilities and possible ways for potential financial loss.
 Vulnerability #1:
+"""
+
+FORMAT_RESULTS_TEMPLATE = """
+Analyze the following text describing vulnerabilities in smart contract code. 
+Create a structured vulnerability report in the form of a Python dictionary that can be parsed into a PredictionResponse object. The dictionary should have two keys: 
+1. 'prediction': A float 0.0 or 1.0 representing the presence of a vulnerability or not. 0.0 if no vulnerabilities found, or 1.0 if 1 or more vulnerabilities found.
+2. 'vulnerabilities': A list of dictionaries, each representing a Vulnerability object with these keys: 
+- 'int_ranges': A list of integer tuples representing affected code line ranges. Use an empty list if no specific lines are mentioned. 
+- 'vulnerability_type': A concise string summarizing the vulnerability type.
+
+Provide only the Python dictionary in your response, without any additional explanation. Ensure the output can be directly parsed into the PredictionResponse class. 
+
+Here's the text to analyze:
+
+{analysis}
 """
 
 # Define which exceptions we want to retry on
@@ -110,8 +104,43 @@ def analyze_code(
     Returns:
         str: The analysis result from the model.
     """
-    prompt = PROMPT_TEMPLATE.format(code=code)
-    bt.logging.info(f"prompt: {prompt}")
+    prompt = VULN_PROMPT_TEMPLATE.format(code=code)
+
+    try:
+        response = client.chat.completions.create(
+            messages=[
+                {
+                    "role": "system",
+                    "content": prompt,
+                }
+            ],
+            model=model,
+            temperature=temperature,
+            max_tokens=max_tokens
+        )
+        return response.choices[0].message.content
+    except Exception as e:
+        bt.logging.error(f"OpenAI API error: {e}")
+        raise
+
+def format_analysis(analysis: str,
+    model: str = "gpt-4o-mini-2024-07-18",
+    temperature: float = 0.7,
+    max_tokens: int = 1000
+    ) -> str:
+    """
+    Formats analysis report to fit into PredictionResponse
+
+    Args:
+        analysis (str): The text to format.
+        model (str): The model to use for analysis.
+        temperature (float): Sampling temperature.
+        max_tokens (int): Maximum number of tokens to generate.
+
+    Returns:
+        str: The formatted PredictionResponse.
+    """
+    prompt = FORMAT_RESULTS_TEMPLATE.format(analysis=analysis)
 
     try:
         response = client.chat.completions.create(
