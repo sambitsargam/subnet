@@ -1,8 +1,5 @@
 from bitsec.protocol import PredictionResponse
-import numpy as np
-import openai
-
-base_prompt = ""
+from bitsec.miner.prompt import code_to_vulns
 
 ## Predicting vulnerabilities is a multifaceted task. Here are some example improvements:
 # - train custom model
@@ -22,5 +19,4 @@ def predict(code: str) -> PredictionResponse:
     """
     
 
-    "TODO fix. return 1.0 for now to stabilize validator input."
-    return PredictionResponse.from_tuple([1.0, []])
+    return code_to_vulns(code=code)
