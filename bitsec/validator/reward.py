@@ -38,7 +38,7 @@ def reward(query: int, response: PredictionResponse) -> float:
 def get_rewards(
     self,
     query: int,
-    responses: List[Tuple],
+    responses: List[PredictionResponse],
 ) -> np.ndarray:
     """
     Returns an array of rewards for the given query and responses.
@@ -53,5 +53,5 @@ def get_rewards(
     # Get all the reward results by iteratively calling your reward() function.
     
     return np.array(
-        [reward(query, PredictionResponse.from_tuple(response)) for response in responses]
+        [reward(query, response) for response in responses]
     )

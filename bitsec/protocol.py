@@ -109,4 +109,4 @@ class CodeSynapse(bt.Synapse):
         Returns:
         - PredictionResponse: The deserialized miner prediction and vulnerabilities
         """
-        return self.response.to_tuple()
+        return self.response
