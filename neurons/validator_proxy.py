@@ -10,7 +10,7 @@ import random
 import numpy as np
 import socket
 
-from bitsec.protocol import CodeSynapse, prepare_code_synapse
+from bitsec.protocol import prepare_code_synapse
 from bitsec.utils.uids import get_random_uids
 from bitsec.validator.proxy import ProxyCounter
 
@@ -160,7 +160,6 @@ class ValidatorProxy:
             deserialize=True,
         )
         
-
         bt.logging.info(f"[ORGANIC] {responses}")
 
         # return predictions from miners
