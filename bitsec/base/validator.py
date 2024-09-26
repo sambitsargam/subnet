@@ -144,6 +144,18 @@ class BaseValidatorNeuron(BaseNeuron):
             while True:
                 bt.logging.info(f"step({self.step}) block({self.block})")
 
+                # Run validator proxy if port is specified
+                if self.config.proxy.port:
+                    try:
+                        bt.logging.info(f"validator_proxy: {self.validator_proxy}")
+                        self.validator_proxy.get_credentials()
+                        bt.logging.info(
+                            "Validator proxy ping to proxy-client successfully"
+                        )
+                    except Exception as e:
+                        bt.logging.warning(e)
+                        bt.logging.warning("Warning, proxy can't ping to proxy-client.")
+
                 # Run multiple forwards concurrently.
                 self.loop.run_until_complete(self.concurrent_forward())
 

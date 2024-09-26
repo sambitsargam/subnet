@@ -26,7 +26,7 @@ import bitsec
 
 # import base miner class which takes care of most of the boilerplate
 from bitsec.base.miner import BaseMinerNeuron
-from bitsec.protocol import CodeSynapse, PredictionResponse
+from bitsec.protocol import CodeSynapse
 from bitsec.miner.predict import predict
 
 
@@ -43,17 +43,17 @@ class Miner(BaseMinerNeuron):
         super(Miner, self).__init__(config=config)
 
     async def forward(
-        self, synapse: bitsec.protocol.CodeSynapse
-    ) -> bitsec.protocol.CodeSynapse:
+        self, synapse: CodeSynapse
+    ) -> CodeSynapse:
         """
         Processes the incoming 'Dummy' synapse by performing a predefined operation on the input data.
         This method should be replaced with actual logic relevant to the miner's purpose.
 
         Args:
-            synapse (bitsec.protocol.Dummy): The synapse object containing the 'dummy_input' data.
+            synapse (CodeSynapse): The synapse object containing the 'code' data.
 
         Returns:
-            bitsec.protocol.Dummy: The synapse object with the 'dummy_output' field set to twice the 'dummy_input' value.
+            CodeSynapse: The synapse object with the 'response' field set to then miner's prediction results.
 
         The 'forward' function is a placeholder and should be overridden with logic that is appropriate for
         the miner's intended operation. This method demonstrates a basic transformation of input data.
@@ -70,7 +70,7 @@ class Miner(BaseMinerNeuron):
         return synapse
 
     async def blacklist(
-        self, synapse: bitsec.protocol.CodeSynapse
+        self, synapse: CodeSynapse
     ) -> typing.Tuple[bool, str]:
         """
         Determines whether an incoming request should be blacklisted and thus ignored. Your implementation should
@@ -131,7 +131,7 @@ class Miner(BaseMinerNeuron):
         )
         return False, "Hotkey recognized!"
 
-    async def priority(self, synapse: bitsec.protocol.CodeSynapse) -> float:
+    async def priority(self, synapse: CodeSynapse) -> float:
         """
         The priority function determines the order in which requests are handled. More valuable or higher-priority
         requests are processed before others. You should design your own priority mechanism with care.
@@ -139,7 +139,7 @@ class Miner(BaseMinerNeuron):
         This implementation assigns priority to incoming requests based on the calling entity's stake in the metagraph.
 
         Args:
-            synapse (bitsec.protocol.Dummy): The synapse object that contains metadata about the incoming request.
+            synapse (CodeSynapse): The synapse object that contains metadata about the incoming request.
 
         Returns:
             float: A priority score derived from the stake of the calling entity.

@@ -6,3 +6,5 @@ pytest>=8
 torch>=2
 numpy>=1
 setuptools>=68
+tenacity>=9
+openai>=1.47

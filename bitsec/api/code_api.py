@@ -17,28 +17,25 @@
 # OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 # DEALINGS IN THE SOFTWARE.
 
+from bitsec.protocol import PredictionResponse
 import bittensor as bt
-from typing import List, Optional, Union, Any, Dict
-from bitsec.protocol import Dummy
+from typing import List, Union, Any, Dict
 from bittensor.subnets import SubnetsAPI
 
 
-class DummyAPI(SubnetsAPI):
+# CodeAPI allows validators to query miners using real code. This gateway allows external client services
+class CodeAPI(SubnetsAPI):
     def __init__(self, wallet: "bt.wallet"):
         super().__init__(wallet)
-        self.netuid = 33
-        self.name = "dummy"
-
-    def prepare_synapse(self, dummy_input: int) -> Dummy:
-        synapse.dummy_input = dummy_input
-        return synapse
+        self.netuid = 204
+        self.name = "bitsec"
 
     def process_responses(
         self, responses: List[Union["bt.Synapse", Any]]
-    ) -> List[int]:
+    ) -> List[PredictionResponse]:
         outputs = []
         for response in responses:
             if response.dendrite.status_code != 200:
                 continue
-            return outputs.append(response.dummy_output)
+            return outputs.append(PredictionResponse.from_tuple(response))
         return outputs
