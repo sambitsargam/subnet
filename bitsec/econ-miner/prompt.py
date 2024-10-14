@@ -31,12 +31,12 @@ DEFAULT_MAX_TOKENS = 1000
 # Templates for prompts
 VULN_PROMPT_TEMPLATE = """
 ### Instructions:
-Find ways for adversarial miners to get more rewards than they should. Suggest specific methods and categorize the risk from the following enum (critical, high, medium, low, informational). Include code blocks when informative to developers, and recommend ways to fix the exploit.
+Thoroughly scan the code line by line for potentially flawed logic or problematic code that could cause security vulnerabilities.
 
 ### Code:
 {code}
 
-List found economic exploits:
+List vulnerabilities and possible ways for potential financial loss.
 """
 
 FORMAT_RESULTS_TEMPLATE = """
