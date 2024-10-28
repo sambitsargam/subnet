@@ -1,4 +1,4 @@
-<h1 align="center">Bitsec Subnet (Bittensor Subnet 204)</h1>
+<h1 align="center">Bitsec Subnet (Bittensor Subnet 209)</h1>
 
 ![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)
 
