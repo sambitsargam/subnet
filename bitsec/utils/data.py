@@ -16,6 +16,8 @@ def get_code_sample() -> str:
     with open(sample_file, 'r') as file:
         return file.read()
        
-def create_challenge(code: str) -> str:
+def create_challenge(code: str, label: float) -> str:
+    # TODO expand more codebases
+    # TODO expand more vulnerabilities
     ## add layers of noise to make challenge harder
     return code
