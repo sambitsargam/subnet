@@ -32,7 +32,9 @@ async def forward(self):
 
     Steps are:
     1. Sample miner UIDs
-    2. Get a code sample.
+    2. Get a code sample. 50/50 chance of:
+        A. SECURE (label = 0): No vulnerability injected.
+        B. VULNERABLE (label = 1): Inject a vulnerability into the code.
     3. Apply random data augmentation to turn the code sample into a challenge.
     4. Prepare a Synapse
     5. Query miner axons
@@ -49,7 +51,10 @@ async def forward(self):
     sample_code = get_code_sample()
     bt.logging.info(f"got code")
 
-    challenge = create_challenge(sample_code)
+    # TODO add 50/50 chance of injection
+    label = 1.0  # hard setting to vulnerable. 
+    
+    challenge = create_challenge(sample_code, label)
     bt.logging.info(f"created challenge")
 
     # The dendrite client queries the network.
@@ -65,7 +70,7 @@ async def forward(self):
 
     # TODO(developer): Define how the validator scores responses.
     # Adjust the scores based on responses from miners.
-    rewards = get_rewards(self, query=self.step, responses=responses)
+    rewards = get_rewards(self, label=label, responses=responses)
 
     # bt.logging.info(f"Scored responses: {rewards}")
     # Update the scores based on the rewards. You may want to define your own update_scores function for custom behavior.
