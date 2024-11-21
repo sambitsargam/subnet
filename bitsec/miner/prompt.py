@@ -88,15 +88,40 @@ def analyze_code(
     """
     prompt = VULN_PROMPT_TEMPLATE.format(code=code)
     try:
-        response = client.chat.completions.create(
+        response = client.beta.chat.completions.parse(
             messages=[{"role": "system", "content": prompt}],
             model=model,
             temperature=temperature,
-            max_tokens=max_tokens
+            max_tokens=max_tokens,
+            response_format=PredictionResponse
         )
-        return response.choices[0].message.content.strip()
+
+        # Guard against empty or invalid responses
+        if response is None or response.choices is None or len(response.choices) == 0 or response.choices[0].message is None:
+            raise ValueError("AI returned empty or invalid response.", response)
+        
+        # Shorter
+        message = response.choices[0].message
+
+        if hasattr(message, "parsed") and message.parsed is not None and type(message.parsed) is PredictionResponse:
+            return message.parsed
+        
+        if hasattr(message, "refusal"):
+            bt.logging.error(f"Analysis of code was refused: {message.refusal}")
+            return message.refusal
+        
+        if hasattr(message, "content"):
+            bt.logging.error(f"Analysis of code returned text content, attempting to parse as PredictionResponse: {message.content}")
+            try:
+                return PredictionResponse.from_tuple(json.loads(message.content))
+            except Exception as e:
+                bt.logging.error(f"Failed to parse as PredictionResponse, error: {e}")
+                raise
+
+        raise ValueError("Analysis did not return a valid PredictionResponse object.", message)
+    
     except Exception as e:
-        bt.logging.error(f"Failed to analyze code: {e}")
+        # Error will be logged by calling function
         raise
 
 def format_analysis(
@@ -163,25 +188,27 @@ def code_to_vulns(code: str) -> PredictionResponse:
     ## short circuit testnet default code
     if default_testnet_code(code) == True:
       bt.logging.info("Default Testnet Code detected. Sending default prediction.")
-      return PredictionResponse.from_tuple([1.0,[]])
+      return PredictionResponse.from_tuple([True,[]])
 
     try:
         bt.logging.info(f"analyzing code:\n{code}")
         analysis = analyze_code(code)
         bt.logging.info(f"Analysis result:\n{analysis}")
 
-        formatted_result = format_analysis(analysis)
-        bt.logging.debug(f"Formatted result: {formatted_result}")
+        if type(analysis) is not PredictionResponse:
+            raise ValueError("Analysis did not return a PredictionResponse object.")
 
-        try:
-            formatted_result_dict = json.loads(formatted_result)
-        except json.JSONDecodeError as e:
-            bt.logging.error(f"Failed to parse formatted result as JSON: {e}")
-            raise
+        # formatted_result = format_analysis(analysis)
+        # bt.logging.debug(f"Formatted result: {formatted_result}")
 
-        prediction_response = PredictionResponse.model_validate(formatted_result_dict)
-        bt.logging.info(f"Analysis complete. Result: {prediction_response}")
-        return prediction_response
+        # try:
+        #     formatted_result_dict = json.loads(formatted_result)
+        # except json.JSONDecodeError as e:
+        #     bt.logging.error(f"Failed to parse formatted result as JSON: {e}")
+        #     raise
+
+        # bt.logging.info(f"Analysis complete. Result: {analysis}")
+        return analysis
     except Exception as e:
         bt.logging.error(f"An error occurred during analysis: {e}")
         raise

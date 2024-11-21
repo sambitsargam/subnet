@@ -163,7 +163,7 @@ def code_to_vulns(code: str) -> PredictionResponse:
     ## short circuit testnet default code
     if default_testnet_code(code) == True:
       bt.logging.info("Default Testnet Code detected. Sending default prediction.")
-      return PredictionResponse.from_tuple([1.0,[]])
+      return PredictionResponse.from_tuple([True,[]])
 
     try:
         bt.logging.info(f"analyzing code:\n{code}")
