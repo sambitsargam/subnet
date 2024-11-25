@@ -31,20 +31,21 @@ def reward(label: float, response: PredictionResponse) -> float:
     - float: The reward value for the miner.
     """
     bt.logging.info(f"response: {response}")
-    bt.logging.info(f"In rewards, query val: {label}, response val: {response.prediction}, rewards val: {1.0 if response.prediction == 1.0 else 0}")
-    return 1.0 if response == 1.0 else 0
+    reward = 1.0 if response.prediction == True else 0
+    bt.logging.info(f"In rewards, query val: {label}, response val: {response.prediction}, rewards val: {reward}")
+    return reward
 
 
 def get_rewards(
     self,
-    label: float,
+    label: bool,
     responses: List[PredictionResponse],
 ) -> np.ndarray:
     """
     Returns an array of rewards for the given query and responses.
 
     Args:
-    - label (float): The true label (1.0 for vulnerable, 0.0 for secure).
+    - label (bool): The true label (True for vulnerable, False for secure).
     - responses (List[Tuple]): A list of responses from the miner.
 
     Returns:

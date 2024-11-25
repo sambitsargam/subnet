@@ -54,29 +54,33 @@ def prepare_code_synapse(code: str):
 
 
 # Vulnerability is a lines_of_code_range in the codebase with description
+class LineRange(pydantic.BaseModel):
+    start: int
+    end: int
+
 class Vulnerability(pydantic.BaseModel):
-    int_ranges: List[Tuple[int, int]] = pydantic.Field(
-        description="An array of lines of code ranges",
-        default=[],
-        min_items=0,  # Do not need to provide range
-        max_items=10,  # Max of 10 ranges
+    int_ranges: List[LineRange] = pydantic.Field(
+        description="An array of lines of code ranges. Optional, but recommended. .",
     )
 
     vulnerability_type: str = pydantic.Field(
-        default="",
         description="Summary of vulnerability type, succint answers favored.",
+    )
+
+    reason_for_potential_financial_loss: str = pydantic.Field(
+        description="Reason for potential financial loss",
     )
     
 # PredictionResponse is the response from the Miner
 class PredictionResponse(pydantic.BaseModel):
-    prediction: float = pydantic.Field(..., description="Probability of vulnerability")
+    prediction: bool = pydantic.Field(..., description="Probability of vulnerability")
     vulnerabilities: List[Vulnerability] = pydantic.Field(default_factory=list, description="List of detected vulnerabilities")
 
     @classmethod
-    def from_tuple(cls, data: tuple[float, List[Vulnerability]]) -> 'PredictionResponse':
+    def from_tuple(cls, data: tuple[bool, List[Vulnerability]]) -> 'PredictionResponse':
         return cls(prediction=data[0], vulnerabilities=data[1])
 
-    def to_tuple(self) -> tuple[float, List[Vulnerability]]:
+    def to_tuple(self) -> tuple[bool, List[Vulnerability]]:
         return (self.prediction, self.vulnerabilities)
 
 class CodeSynapse(bt.Synapse):
@@ -86,8 +90,8 @@ class CodeSynapse(bt.Synapse):
 
     Attributes:
     - code: a str of code
-    - prediction: a float indicating the probabilty that the code has a critical / severe vulnerability.
-        >.5 is considered generated/modified, <= 0.5 is considered real.
+    - prediction: a bool indicating the probabilty that the code has a critical / severe vulnerability.
+        True is considered generated/modified, False is considered real.
     """
 
     # Required request input, filled by sending dendrite caller.
@@ -95,7 +99,7 @@ class CodeSynapse(bt.Synapse):
 
     # Optional request output, filled by receiving axon.
     response: PredictionResponse = pydantic.Field(
-        default_factory=lambda: PredictionResponse(prediction=-1.0, vulnerabilities=[]),
+        default_factory=lambda: PredictionResponse(prediction=False, vulnerabilities=[]),
         title="Miner Prediction",
         description="Prediction response containing probability and vulnerabilities",
         frozen=False
