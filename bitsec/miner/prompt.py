@@ -193,21 +193,11 @@ def code_to_vulns(code: str) -> PredictionResponse:
     try:
         bt.logging.info(f"analyzing code:\n{code}")
         analysis = analyze_code(code)
-        bt.logging.info(f"Analysis result:\n{analysis}")
+        bt.logging.info(f"Analysis complete. Result:\n{analysis}")
 
         if type(analysis) is not PredictionResponse:
             raise ValueError("Analysis did not return a PredictionResponse object.")
 
-        # formatted_result = format_analysis(analysis)
-        # bt.logging.debug(f"Formatted result: {formatted_result}")
-
-        # try:
-        #     formatted_result_dict = json.loads(formatted_result)
-        # except json.JSONDecodeError as e:
-        #     bt.logging.error(f"Failed to parse formatted result as JSON: {e}")
-        #     raise
-
-        # bt.logging.info(f"Analysis complete. Result: {analysis}")
         return analysis
     except Exception as e:
         bt.logging.error(f"An error occurred during analysis: {e}")
