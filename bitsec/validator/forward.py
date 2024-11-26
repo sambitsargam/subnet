@@ -17,10 +17,11 @@
 # OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 # DEALINGS IN THE SOFTWARE.
 
+import random
 import bittensor as bt
 
 from bitsec.protocol import prepare_code_synapse
-from bitsec.validator.reward import get_rewards
+from bitsec.validator.reward import reward
 from bitsec.utils.data import get_code_sample, create_challenge
 from bitsec.utils.uids import get_random_uids
 
@@ -48,11 +49,11 @@ async def forward(self):
     # get_random_uids is an example method, but you can replace it with your own.
     miner_uids = get_random_uids(self, k=self.config.neuron.sample_size)
 
-    sample_code = get_code_sample()
-    bt.logging.info(f"got code")
+    vulnerable = random.random() < 0.5
+    sample_code, expected_response = get_code_sample(vulnerable=vulnerable)
+    bt.logging.info(f"got code from {sample_code}")
 
-    # TODO add 50/50 chance of injection
-    label = 1.0  # hard setting to vulnerable. 
+    label = expected_response
     
     challenge = create_challenge(sample_code, label)
     bt.logging.info(f"created challenge")
@@ -70,7 +71,7 @@ async def forward(self):
 
     # TODO(developer): Define how the validator scores responses.
     # Adjust the scores based on responses from miners.
-    rewards = get_rewards(self, label=label, responses=responses)
+    rewards = reward(vulnerable=vulnerable, expected_response=expected_response, responses=responses)
 
     # bt.logging.info(f"Scored responses: {rewards}")
     # Update the scores based on the rewards. You may want to define your own update_scores function for custom behavior.
