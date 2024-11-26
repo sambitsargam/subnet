@@ -77,10 +77,14 @@ def chat_completion(
         # Shorter access to message, more readable
         message = response.choices[0].message
 
+        # Make debugging easier
+        if hasattr(message, "content"):
+            print(f"Response: {message.content}")
+
         if hasattr(message, "refusal") and message.refusal:
             raise ValueError(f"Prompt was refused: {message.refusal}")
         
-        if response_format: 
+        if response_format:
             if hasattr(message, "parsed") and message.parsed is not None:
                 if isinstance(message.parsed, response_format):
                     return message.parsed

@@ -1,4 +1,5 @@
 import pytest
+import os
 from unittest.mock import patch, MagicMock
 from bitsec.utils.llm import chat_completion
 from bitsec.protocol import PredictionResponse, Vulnerability, LineRange
@@ -6,11 +7,13 @@ import openai
 import bittensor as bt
 from bitsec.utils.data import get_code_sample
 
+SPEND_MONEY = os.environ.get("SPEND_MONEY", False)
 TEST_RESPONSE = "Test response"
 
 def test_chat_completion_with_real_response():
     """Test response with real response."""
-    return # costs money, comment out to run
+    if not SPEND_MONEY:
+        return # costs money, comment out to run
     code, expected_response = get_code_sample(vulnerable=False)
     result = chat_completion(code, response_format=PredictionResponse)
     assert isinstance(result, PredictionResponse)

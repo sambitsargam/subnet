@@ -16,13 +16,14 @@
 # THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
 # OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 # DEALINGS IN THE SOFTWARE.
-from bitsec.protocol import PredictionResponse
+import json
 import numpy as np
-from typing import List, Tuple
+from typing import List
 import bittensor as bt
 from bitsec.utils.llm import chat_completion
+from bitsec.protocol import PredictionResponse
 
-def reward(vulnerable: bool, expected_response: str, response: PredictionResponse) -> float:
+def reward(vulnerable: bool, expected_response: PredictionResponse, response: PredictionResponse) -> float:
     """
     Reward the miner response to the dummy request. This method returns a reward
     value for the miner, which is used to update the miner's score.
@@ -31,40 +32,51 @@ def reward(vulnerable: bool, expected_response: str, response: PredictionRespons
     - float: The reward value for the miner.
     """
     bt.logging.info(f"response: {response}")
+    score = score_response(expected_response, response)
+
+    if score >= 5:
+        return 1.0
+    elif score >= 4:
+        return 0.5
+    elif score >= 3:
+        return 0.25
+    elif score >= 2:
+        return 0.1
+    
+    return 0.0
+
+
+def score_response(expected_response: PredictionResponse, response: PredictionResponse) -> int:
+    print(f"expected_response: {type(expected_response)}")
+    print(f"response: {type(response)}")
+    print(f"expected_response prediction: {expected_response.prediction}")
+    print(f"response prediction: {response.prediction}")
+
+    if response.prediction != expected_response.prediction:
+        return 0
+    elif response.vulnerabilities == expected_response.vulnerabilities:
+        return 5
 
     # Use LLM to compare the response to the expected response
     # and return a reward based on the similarity
-    prompt = f"""You are a security expert tasked with evaluating the response to a security vulnerability scan. Rate the response based upon the expected vulnerability report:
-      1: totally incorrect
+    prompt = f"""You are a security expert tasked with evaluating the response to a security vulnerability scan. Compared to the expected vulnerability report, score the actual response:
+      1: is totally incorrect
       2: includes <50% of the expected vulnerabilities
       3: includes most/all expected vulnerabilities but also includes 1+ incorrect vulnerabilities
       4: includes >50% of the expected vulnerabilities but not all
-      5: exactly the same vulnerabilities
-      Return only the number.
+      5: has exactly the same vulnerabilities
+    Return only the score.
 
-    <Expected response>
-        {expected_response}
-    </Expected response>
-    <Actual response>
-        {response.prediction}
-    </Actual response>
+    <Expected>
+        {json.dumps(expected_response)}
+    </Expected>
+    <Actual>
+        {json.dumps(response)}
+    </Actual>
     """
     score = chat_completion(prompt, response_format=int)
     bt.logging.info(f"Score: {score}")
-
-    if score >= 5:
-        reward = 1
-    elif score >= 4:
-        reward = 0.5
-    elif score >= 3:
-        reward = 0.25
-    elif score >= 2:
-        reward = 0.1
-    else:
-        reward = 0
-
-    return reward
-
+    return score
 
 def get_rewards(
     label: bool,

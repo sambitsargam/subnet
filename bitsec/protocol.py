@@ -56,12 +56,16 @@ def prepare_code_synapse(code: str):
 
 # Vulnerability is a lines_of_code_range in the codebase with description
 class LineRange(pydantic.BaseModel):
-    start: int
-    end: int
+    start: int = pydantic.Field(description="Start line of the range")
+    end: int = pydantic.Field(description="End line of the range")
+    
+    def __dict__(self):
+        """Make JSON serializable by default."""
+        return self.model_dump()
 
 class Vulnerability(pydantic.BaseModel):
     int_ranges: List[LineRange] = pydantic.Field(
-        description="An array of lines of code ranges. Optional, but recommended. .",
+        description="An array of lines of code ranges. Optional, but recommended.",
     )
 
     vulnerability_type: str = pydantic.Field(
@@ -72,21 +76,35 @@ class Vulnerability(pydantic.BaseModel):
         description="Reason for potential financial loss",
     )
     
+    def __dict__(self):
+        """Make JSON serializable by default."""
+        return self.model_dump()
+
 # PredictionResponse is the response from the Miner
 class PredictionResponse(pydantic.BaseModel):
-    prediction: bool = pydantic.Field(..., description="Vulnerabilities were found")
-    vulnerabilities: List[Vulnerability] = pydantic.Field(default_factory=list, description="List of detected vulnerabilities")
+    prediction: bool = pydantic.Field(
+        default=False,
+        description="Vulnerabilities were found"
+    )
+    vulnerabilities: List[Vulnerability] = pydantic.Field(
+        default_factory=list,
+        description="List of detected vulnerabilities"
+    )
 
     @classmethod
-    def from_tuple(cls, data: tuple[bool, List[Vulnerability]]) -> 'PredictionResponse':
+    def from_tuple(cls, data: Tuple[bool, List[Vulnerability]]) -> 'PredictionResponse':
         return cls(prediction=data[0], vulnerabilities=data[1])
 
     @classmethod
     def from_json(cls, json_data: str) -> 'PredictionResponse':
         return cls(**json.loads(json_data))
 
-    def to_tuple(self) -> tuple[bool, List[Vulnerability]]:
+    def to_tuple(self) -> Tuple[bool, List[Vulnerability]]:
         return (self.prediction, self.vulnerabilities)
+
+    def __dict__(self) -> dict:
+        """Make JSON serializable by default."""
+        return self.model_dump()
 
 class CodeSynapse(bt.Synapse):
     """
