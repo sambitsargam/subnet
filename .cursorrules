@@ -13,7 +13,6 @@ Follow the following rules:
 - Add descriptive docstrings to all python functions and classes as well.
 - Please use pep257 convention.
 - Update existing docstrings if need be.
-- Make sure you keep any comments that exist in a file.
 - Only write comments for non-obvious code.
 - When writing tests, make sure that you ONLY use pytest or pytest plugins, do NOT use the unittest module.
 - All tests should have typing annotations as well.
@@ -22,3 +21,4 @@ Follow the following rules:
 - If you are creating files inside of ./tests or a new directory, be sure to make a init.py file if one does not exist.
 - All tests should be fully annotated and should contain docstrings.
 
+DO NOT EVER DELETE ANY COMMENTS, DOCSTRINGS, LOGGING, OR PRINT STATEMENTS.
