@@ -17,6 +17,7 @@
 # OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 # DEALINGS IN THE SOFTWARE.
 
+import json
 import bittensor as bt
 import pydantic
 from typing import List, Tuple
@@ -73,12 +74,16 @@ class Vulnerability(pydantic.BaseModel):
     
 # PredictionResponse is the response from the Miner
 class PredictionResponse(pydantic.BaseModel):
-    prediction: bool = pydantic.Field(..., description="Probability of vulnerability")
+    prediction: bool = pydantic.Field(..., description="Vulnerabilities were found")
     vulnerabilities: List[Vulnerability] = pydantic.Field(default_factory=list, description="List of detected vulnerabilities")
 
     @classmethod
     def from_tuple(cls, data: tuple[bool, List[Vulnerability]]) -> 'PredictionResponse':
         return cls(prediction=data[0], vulnerabilities=data[1])
+
+    @classmethod
+    def from_json(cls, json_data: str) -> 'PredictionResponse':
+        return cls(**json.loads(json_data))
 
     def to_tuple(self) -> tuple[bool, List[Vulnerability]]:
         return (self.prediction, self.vulnerabilities)
