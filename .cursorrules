@@ -21,4 +21,4 @@ Follow the following rules:
 - If you are creating files inside of ./tests or a new directory, be sure to make a init.py file if one does not exist.
 - All tests should be fully annotated and should contain docstrings.
 
-DO NOT EVER DELETE ANY COMMENTS, DOCSTRINGS, LOGGING, OR PRINT STATEMENTS.
+DO NOT EVER DELETE ANY COMMENTS, DOCSTRINGS, LOGGING, PYDANTIC FIELD INFO, OR PRINT STATEMENTS.
