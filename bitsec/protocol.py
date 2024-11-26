@@ -91,20 +91,21 @@ class PredictionResponse(pydantic.BaseModel):
         description="List of detected vulnerabilities"
     )
 
+    model_config = { "populate_by_name": True }
+
+    # get field attrs from model
+    def __getattr__(self, name):
+        try:
+            return self.model_dump()[name]
+        except KeyError:
+            raise AttributeError(f"'{self.__class__.__name__}' has no attribute '{name}'")
+
     @classmethod
     def from_tuple(cls, data: Tuple[bool, List[Vulnerability]]) -> 'PredictionResponse':
         return cls(prediction=data[0], vulnerabilities=data[1])
 
-    @classmethod
-    def from_json(cls, json_data: str) -> 'PredictionResponse':
-        return cls(**json.loads(json_data))
-
     def to_tuple(self) -> Tuple[bool, List[Vulnerability]]:
         return (self.prediction, self.vulnerabilities)
-
-    def __dict__(self) -> dict:
-        """Make JSON serializable by default."""
-        return self.model_dump()
 
 class CodeSynapse(bt.Synapse):
     """
