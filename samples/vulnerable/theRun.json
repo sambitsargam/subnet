@@ -1,0 +1,12 @@
+{
+    "prediction": true,
+    "vulnerabilities": [
+        {
+            "int_ranges": [
+                {"start": 96, "end": 104}
+            ],
+            "vulnerability_type": "Random Number Generation",
+            "reason_for_potential_financial_loss": "Blockhash can be manipulated by a miner, allowing them to influence the outcome of the lottery."
+        }
+    ]
+}

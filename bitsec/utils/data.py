@@ -5,7 +5,7 @@ from bitsec.protocol import PredictionResponse
 
 SAMPLE_DIR = os.path.join(os.path.dirname(__file__), '..', '..', 'samples')
 VULNERABLE_CODE_DIR = '/vulnerable'
-SECURE_CODE_DIR = '/secure'
+SECURE_CODE_DIR = '/clean-codebases'
 
 def get_code_sample(vulnerable: bool) -> Tuple[str, str]:
     """

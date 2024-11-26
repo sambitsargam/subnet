@@ -1,0 +1,12 @@
+{
+    "prediction": true,
+    "vulnerabilities": [
+        {
+            "int_ranges": [
+                {"start": 13, "end": 15}
+            ],
+            "vulnerability_type": "Self Destruct",
+            "reason_for_potential_financial_loss": "Attack can force the balance of EtherGame to equal 7 ether. Now no one can deposit and the winner cannot be set."
+        }
+    ]
+}

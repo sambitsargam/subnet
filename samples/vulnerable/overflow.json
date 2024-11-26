@@ -1,0 +1,12 @@
+{
+    "prediction": true,
+    "vulnerabilities": [
+        {
+            "int_ranges": [
+                {"start": 13, "end": 15}
+            ],
+            "vulnerability_type": "Arithmetic Overflow and Underflow Vulnerability",
+            "reason_for_potential_financial_loss": "After attack, attacker can withdraw funds before the 1 week waiting period."
+        }
+    ]
+}
