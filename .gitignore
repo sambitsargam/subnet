@@ -1,3 +1,6 @@
+# Not sure where this is created, but don't need it in the repo
+.wallets_setup
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
