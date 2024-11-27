@@ -59,6 +59,15 @@ class LineRange(pydantic.BaseModel):
     start: int = pydantic.Field(description="Start line of the range")
     end: int = pydantic.Field(description="End line of the range")
     
+    model_config = { "populate_by_name": True }
+
+    # get field attrs from model
+    def __getattr__(self, name):
+        try:
+            return self.model_dump()[name]
+        except KeyError:
+            raise AttributeError(f"'{self.__class__.__name__}' has no attribute '{name}'")
+
     def __dict__(self):
         """Make JSON serializable by default."""
         return self.model_dump()
@@ -76,12 +85,25 @@ class Vulnerability(pydantic.BaseModel):
         description="Reason for potential financial loss",
     )
     
+    model_config = { "populate_by_name": True }
+
+    # get field attrs from model
+    def __getattr__(self, name):
+        try:
+            return self.model_dump()[name]
+        except KeyError:
+            raise AttributeError(f"'{self.__class__.__name__}' has no attribute '{name}'")
+
     def __dict__(self):
         """Make JSON serializable by default."""
         return self.model_dump()
 
 # PredictionResponse is the response from the Miner
 class PredictionResponse(pydantic.BaseModel):
+    """
+    PredictionResponse contains the predicted vulnerability status and the list of vulnerabilities.
+    To turn into JSON, use the model_dump_json() instance method.
+    """
     prediction: bool = pydantic.Field(
         default=False,
         description="Vulnerabilities were found"

@@ -20,6 +20,7 @@ import json
 import numpy as np
 from typing import List
 import bittensor as bt
+import pydantic
 from bitsec.utils.llm import chat_completion
 from bitsec.protocol import PredictionResponse
 
@@ -47,36 +48,37 @@ def reward(vulnerable: bool, expected_response: PredictionResponse, response: Pr
 
 
 def score_response(expected_response: PredictionResponse, response: PredictionResponse) -> int:
-    print(f"expected_response: {type(expected_response)}")
-    print(f"response: {type(response)}")
-    print(f"expected_response prediction: {expected_response.prediction}")
-    print(f"response prediction: {response.prediction}")
-
     if response.prediction != expected_response.prediction:
+        # Prediction is wrong, no need to compare vulnerabilities
         return 0
     elif response.vulnerabilities == expected_response.vulnerabilities:
+        # Text is exactly the same, so it's a perfect match
         return 5
+
+    class Score(pydantic.BaseModel):
+        score: int
+        verbose_reason: str
 
     # Use LLM to compare the response to the expected response
     # and return a reward based on the similarity
     prompt = f"""You are a security expert tasked with evaluating the response to a security vulnerability scan. Compared to the expected vulnerability report, score the actual response:
-      1: is totally incorrect
-      2: includes <50% of the expected vulnerabilities
-      3: includes most/all expected vulnerabilities but also includes 1+ incorrect vulnerabilities
-      4: includes >50% of the expected vulnerabilities but not all
+      1: does not include any of the expected vulnerabilities, may include incorrect vulnerabilities
+      2: includes 1+ expected vulnerabilities, no incorrect vulnerabilities
+      3: includes 1+ expected vulnerabilities but also includes 1+ incorrect vulnerabilities
+      4: includes >50% of the expected vulnerabilities but not all, no incorrect vulnerabilities
       5: has exactly the same vulnerabilities
     Return only the score.
 
     <Expected>
-        {json.dumps(expected_response)}
+        {expected_response.model_dump_json()}
     </Expected>
     <Actual>
-        {json.dumps(response)}
+        {response.model_dump_json()}
     </Actual>
     """
-    score = chat_completion(prompt, response_format=int)
+    score = chat_completion(prompt, response_format=Score)
     bt.logging.info(f"Score: {score}")
-    return score
+    return score.score
 
 def get_rewards(
     label: bool,
