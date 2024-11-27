@@ -23,7 +23,7 @@ client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
 # Default parameters
 DEFAULT_MODEL = "gpt-4o-mini-2024-07-18"
-DEFAULT_TEMPERATURE = 0.7
+DEFAULT_TEMPERATURE = 0.1
 DEFAULT_MAX_TOKENS = 1000
 
 # Define which exceptions we want to retry on
