@@ -13,7 +13,7 @@ def mock_prediction_response():
         prediction=True,
         vulnerabilities=[
             Vulnerability(
-                int_ranges=[LineRange(start=1, end=9)],
+                line_ranges=[LineRange(start=1, end=9)],
                 vulnerability_type="test_vuln",
                 reason_for_potential_financial_loss="test reason"
             )
@@ -26,10 +26,10 @@ def mock_chat_completion():
         mock.return_value = 5
         yield mock
 
-vuln1 = Vulnerability(int_ranges=[LineRange(start=1, end=9)], vulnerability_type="Arithmetic Overflow", reason_for_potential_financial_loss="Can lead to loss of funds")
-vuln2 = Vulnerability(int_ranges=[LineRange(start=10, end=20)], vulnerability_type="Security Misconfiguration", reason_for_potential_financial_loss="Allows unauthorized access to sensitive data")
-vuln3 = Vulnerability(int_ranges=[LineRange(start=21, end=30)], vulnerability_type="Reentrancy", reason_for_potential_financial_loss="Can lead to loss of funds")
-vuln4 = Vulnerability(int_ranges=[LineRange(start=30, end=40)], vulnerability_type="Security Misconfiguration", reason_for_potential_financial_loss="Allows unauthorized access to terminate the contract")
+vuln1 = Vulnerability(line_ranges=[LineRange(start=1, end=9)], vulnerability_type="Arithmetic Overflow", reason_for_potential_financial_loss="Can lead to loss of funds")
+vuln2 = Vulnerability(line_ranges=[LineRange(start=10, end=20)], vulnerability_type="Security Misconfiguration", reason_for_potential_financial_loss="Allows unauthorized access to sensitive data")
+vuln3 = Vulnerability(line_ranges=[LineRange(start=21, end=30)], vulnerability_type="Reentrancy", reason_for_potential_financial_loss="Can lead to loss of funds")
+vuln4 = Vulnerability(line_ranges=[LineRange(start=30, end=40)], vulnerability_type="Security Misconfiguration", reason_for_potential_financial_loss="Allows unauthorized access to terminate the contract")
 
 
 def test_mock_reward_perfect_score(mock_prediction_response):

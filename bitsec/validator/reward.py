@@ -32,7 +32,6 @@ def reward(vulnerable: bool, expected_response: PredictionResponse, response: Pr
     Returns:
     - float: The reward value for the miner.
     """
-    bt.logging.info(f"response: {response}")
     score = score_response(expected_response, response)
 
     if score >= 5:
@@ -61,12 +60,16 @@ def score_response(expected_response: PredictionResponse, response: PredictionRe
 
     # Use LLM to compare the response to the expected response
     # and return a reward based on the similarity
-    prompt = f"""You are a security expert tasked with evaluating the response to a security vulnerability scan. Compared to the expected vulnerability report, score the actual response:
+    prompt = f"""You are a security expert tasked with evaluating the response to a security vulnerability scan. 
+
+    IGNORE LINE RANGES.
+    
+    Compared to the expected vulnerability report, score the actual response:
       1: does not include any of the expected vulnerabilities, may include incorrect vulnerabilities
       2: includes 1+ expected vulnerabilities, no incorrect vulnerabilities
       3: includes 1+ expected vulnerabilities but also includes 1+ incorrect vulnerabilities
-      4: includes >50% of the expected vulnerabilities but not all, no incorrect vulnerabilities
-      5: has exactly the same vulnerabilities
+      4: no incorrect vulnerabilities. Includes >50% of the expected vulnerabilities but not all or has different line ranges.
+      5: has all the same vulnerabilities
     Return only the score.
 
     <Expected>

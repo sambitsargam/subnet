@@ -45,7 +45,7 @@ def test_chat_completion_with_format(mock_openai_response):
     expected_response = PredictionResponse.from_tuple([
         True,
         [Vulnerability(
-            int_ranges=[LineRange(start=2, end=5)],
+            line_ranges=[LineRange(start=2, end=5)],
             vulnerability_type="Test Vulnerability",
             reason_for_potential_financial_loss="Test Reason"
         )]
