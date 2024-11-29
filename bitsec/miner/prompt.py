@@ -14,6 +14,8 @@ VULN_PROMPT_TEMPLATE = """
 ### Instructions:
 Thoroughly scan the code line by line for potentially flawed logic or problematic code that could cause security vulnerabilities.
 
+Ignore privacy concerns since the code is deployed on a public blockchain.
+
 ### Code:
 {code}
 
@@ -25,7 +27,7 @@ def analyze_code(
     code: str,
     model: str | None = None,
     temperature: float | None = None,
-    max_tokens: int | None = None
+    max_tokens: int = 4000
 ) -> PredictionResponse:
     """
     Calls OpenAI API to analyze provided code for vulnerabilities.
@@ -34,7 +36,7 @@ def analyze_code(
         code (str): The code to analyze.
         model (str, optional): The model to use for analysis.
         temperature (float, optional): Sampling temperature.
-        max_tokens (int, optional): Maximum number of tokens to generate.
+        max_tokens (int, optional): Maximum number of tokens to generate. Defaults to 4000.
 
     Returns:
         PredictionResponse: The analysis result from the model.
@@ -42,15 +44,14 @@ def analyze_code(
     prompt = VULN_PROMPT_TEMPLATE.format(code=code)
     kwargs = {
         'prompt': prompt,
-        'response_format': PredictionResponse
+        'response_format': PredictionResponse,
+        'max_tokens': max_tokens
     }
     if model is not None:
         kwargs['model'] = model
     if temperature is not None:
         kwargs['temperature'] = temperature
-    if max_tokens is not None:
-        kwargs['max_tokens'] = max_tokens
-        
+    
     return chat_completion(**kwargs)
 
 def default_testnet_code(code: str) -> bool:
