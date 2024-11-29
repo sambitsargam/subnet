@@ -14,8 +14,8 @@ def mock_prediction_response():
         vulnerabilities=[
             Vulnerability(
                 line_ranges=[LineRange(start=1, end=9)],
-                vulnerability_type="test_vuln",
-                reason_for_potential_financial_loss="test reason"
+                short_description="test_vuln",
+                detailed_description="test reason"
             )
         ]
     )
@@ -26,10 +26,10 @@ def mock_chat_completion():
         mock.return_value = 5
         yield mock
 
-vuln1 = Vulnerability(line_ranges=[LineRange(start=1, end=9)], vulnerability_type="Arithmetic Overflow", reason_for_potential_financial_loss="Can lead to loss of funds")
-vuln2 = Vulnerability(line_ranges=[LineRange(start=10, end=20)], vulnerability_type="Security Misconfiguration", reason_for_potential_financial_loss="Allows unauthorized access to sensitive data")
-vuln3 = Vulnerability(line_ranges=[LineRange(start=21, end=30)], vulnerability_type="Reentrancy", reason_for_potential_financial_loss="Can lead to loss of funds")
-vuln4 = Vulnerability(line_ranges=[LineRange(start=30, end=40)], vulnerability_type="Security Misconfiguration", reason_for_potential_financial_loss="Allows unauthorized access to terminate the contract")
+vuln1 = Vulnerability(line_ranges=[LineRange(start=1, end=9)], short_description="Arithmetic Overflow", detailed_description="Can lead to loss of funds")
+vuln2 = Vulnerability(line_ranges=[LineRange(start=10, end=20)], short_description="Security Misconfiguration", detailed_description="Allows unauthorized access to sensitive data")
+vuln3 = Vulnerability(line_ranges=[LineRange(start=21, end=30)], short_description="Reentrancy", detailed_description="Can lead to loss of funds")
+vuln4 = Vulnerability(line_ranges=[LineRange(start=30, end=40)], short_description="Security Misconfiguration", detailed_description="Allows unauthorized access to terminate the contract")
 
 
 def test_mock_reward_perfect_score(mock_prediction_response):
@@ -59,7 +59,7 @@ def test_costs_money_score_reponse_score_5():
     
     expected_response = PredictionResponse(prediction=True, vulnerabilities=[vuln1])
     vuln1_copy = vuln1.model_copy()
-    vuln1_copy.vulnerability_type += " found" # so it's different text but effectively same vulnerability
+    vuln1_copy.short_description += " found" # so it's different text but effectively same vulnerability
     response = PredictionResponse(prediction=True, vulnerabilities=[vuln1_copy])
     result = score_response(expected_response, response)
     assert result == 5
