@@ -2,11 +2,104 @@
     "prediction": true,
     "vulnerabilities": [
         {
-            "int_ranges": [
-                {"start": 96, "end": 104}
+            "line_ranges": [
+                {
+                    "start": 1,
+                    "end": 1
+                }
             ],
-            "vulnerability_type": "Random Number Generation",
-            "reason_for_potential_financial_loss": "Blockhash can be manipulated by a miner, allowing them to influence the outcome of the lottery."
+            "short_description": "Constructor does not specify visibility.",
+            "detailed_description": "The constructor 'theRun()' does not specify visibility. In Solidity, constructors should be marked as 'public' or 'internal'. If not specified, it defaults to 'public', but this can lead to confusion and potential misuse in future versions of Solidity."
+        },
+        {
+            "line_ranges": [
+                {
+                    "start": 9,
+                    "end": 9
+                }
+            ],
+            "short_description": "Use of deprecated 'send' method.",
+            "detailed_description": "The 'send' method is deprecated and can fail silently. If the transfer fails, it does not revert the transaction, which can lead to unexpected behavior and financial loss. It is recommended to use 'transfer' or 'call' with proper error handling."
+        },
+        {
+            "line_ranges": [
+                {
+                    "start": 12,
+                    "end": 12
+                }
+            ],
+            "short_description": "Potential for reentrancy attack in payout logic.",
+            "detailed_description": "The payout logic in the 'Participate' function allows for reentrancy attacks. If a player is paid and they call back into the contract before the state is updated, they could manipulate the contract's state to drain funds. This can lead to significant financial loss."
+        },
+        {
+            "line_ranges": [
+                {
+                    "start": 25,
+                    "end": 25
+                }
+            ],
+            "short_description": "Random number generation is predictable.",
+            "detailed_description": "The random number generation relies on block properties and timestamps, which can be manipulated by miners. This predictability can lead to unfair advantages in the game, allowing malicious actors to exploit the randomness for financial gain."
+        },
+        {
+            "line_ranges": [
+                {
+                    "start": 43,
+                    "end": 43
+                }
+            ],
+            "short_description": "Potential integer overflow/underflow in fee calculations.",
+            "detailed_description": "The fee calculations do not use SafeMath, which can lead to integer overflow or underflow issues. This could allow fees to be incorrectly calculated, leading to financial loss for the contract owner or participants."
+        },
+        {
+            "line_ranges": [
+                {
+                    "start": 56,
+                    "end": 56
+                }
+            ],
+            "short_description": "Lack of input validation in PlayerInfo function.",
+            "detailed_description": "The 'PlayerInfo' function does not validate the input 'id' properly. It should check if 'id' is less than 'players.length' to avoid out-of-bounds access. This could lead to unexpected behavior or crashes."
+        },
+        {
+            "line_ranges": [
+                {
+                    "start": 66,
+                    "end": 66
+                }
+            ],
+            "short_description": "Potential for gas limit issues in payout loop.",
+            "detailed_description": "The while loop in the 'Participate' function could run indefinitely if the conditions are met, leading to gas limit issues. This could prevent payouts from occurring and result in financial loss for players."
+        },
+        {
+            "line_ranges": [
+                {
+                    "start": 77,
+                    "end": 77
+                }
+            ],
+            "short_description": "Fees can be reduced to negative values.",
+            "detailed_description": "The 'GetAndReduceFeesByFraction' function allows for the fee fraction to be reduced without proper checks, potentially leading to negative fee values. This could disrupt the fee structure and lead to financial loss."
+        },
+        {
+            "line_ranges": [
+                {
+                    "start": 84,
+                    "end": 84
+                }
+            ],
+            "short_description": "Inconsistent return types in Watch functions.",
+            "detailed_description": "The 'WatchBalance', 'WatchBalanceInEther', and similar functions return values in wei without clear documentation. This inconsistency can lead to confusion for users and potential financial miscalculations."
+        },
+        {
+            "line_ranges": [
+                {
+                    "start": 90,
+                    "end": 90
+                }
+            ],
+            "short_description": "Potential for unhandled exceptions in CollectAllFees.",
+            "detailed_description": "The 'CollectAllFees' function uses 'throw' which is deprecated. If fees are zero, it will revert the transaction, but this could lead to unhandled exceptions if not properly managed, causing financial loss."
         }
     ]
 }

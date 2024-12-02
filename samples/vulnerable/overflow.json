@@ -2,11 +2,48 @@
     "prediction": true,
     "vulnerabilities": [
         {
-            "int_ranges": [
-                {"start": 13, "end": 15}
+            "line_ranges": [
+                {
+                    "start": 10,
+                    "end": 10
+                }
             ],
-            "vulnerability_type": "Arithmetic Overflow and Underflow Vulnerability",
-            "reason_for_potential_financial_loss": "After attack, attacker can withdraw funds before the 1 week waiting period."
+            "short_description": "Potential for reentrancy attack during withdrawal.",
+            "detailed_description": "The withdraw function uses a low-level call to send Ether to the user. This can be exploited by a malicious contract that calls back into the withdraw function before the state is updated (i.e., before balances[msg.sender] is set to 0). This could allow the attacker to withdraw more Ether than they deposited, leading to financial loss."
+        },
+        {
+            "line_ranges": [
+                {
+                    "start": 6,
+                    "end": 6
+                },
+                {
+                    "start": 8,
+                    "end": 8
+                }
+            ],
+            "short_description": "Lack of input validation for deposit and lock time increase.",
+            "detailed_description": "The deposit function does not check for zero deposits, which could lead to unintended behavior. Additionally, the increaseLockTime function allows users to increase their lock time without any restrictions, potentially leading to a situation where users can indefinitely lock their funds without a clear limit."
+        },
+        {
+            "line_ranges": [
+                {
+                    "start": 12,
+                    "end": 12
+                }
+            ],
+            "short_description": "No limit on lock time increase could lead to indefinite locking of funds.",
+            "detailed_description": "The increaseLockTime function allows users to increase their lock time by any amount of seconds. This could be exploited by users to lock their funds indefinitely, preventing them from ever being able to withdraw their funds."
+        },
+        {
+            "line_ranges": [
+                {
+                    "start": 14,
+                    "end": 14
+                }
+            ],
+            "short_description": "Potential for incorrect balance handling due to lack of checks.",
+            "detailed_description": "The withdraw function sets balances[msg.sender] to 0 before sending Ether. If the call to send Ether fails, the user's balance will be reset to 0, but they will not have received any Ether. This could lead to a situation where users lose their funds without being able to recover them."
         }
     ]
 }

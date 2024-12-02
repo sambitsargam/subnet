@@ -59,10 +59,7 @@ def load_sample_file(sample_filename_with_path: str) -> Tuple[str, PredictionRes
         raise FileNotFoundError(f"Expected response file not found: {expected_response_filename}")
     
     with open(sample_filename_with_path, 'r') as sample_file, open(expected_response_filename, 'r') as expected_response_file:
-        # TODO: uncomment this once we have stable JSON output from LLM
-        # expected_response = PredictionResponse.from_json(expected_response_file.read())
-        expected_response = PredictionResponse.from_tuple([True, []])
-        # End of TODO
+        expected_response = PredictionResponse.from_json(expected_response_file.read())
         return sample_file.read(), expected_response
 
 def create_challenge(code: str, label: float) -> str:
