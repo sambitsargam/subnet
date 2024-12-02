@@ -18,17 +18,15 @@ def test_response_for_every_sample():
         code, expected_response = load_sample_file(filename)
         result = analyze_code(code)
         assert isinstance(result, PredictionResponse)
-        # assert result.prediction == expected_response.prediction, f"{filename}: Prediction is {result.prediction}, expected {expected_response.prediction}"
-        # assert len(result.vulnerabilities) == len(expected_response.vulnerabilities), f"Number of vulnerabilities for {filename} is {len(result.vulnerabilities)}, expected {len(expected_response.vulnerabilities)}. Expected vulnerabilities: {expected_response.model_dump_json(indent=2)}\n\nResult vulnerabilities: {result.model_dump_json(indent=2)}\n\n"
-        print(f"{filename}: vuln.lines >1: {len(list(filter(lambda v: len(v.line_ranges)>1, result.vulnerabilities)))}")
+        assert result.prediction == expected_response.prediction, f"{filename}: Prediction is {result.prediction}, expected {expected_response.prediction}"
+        # do not check number of vulnerabilities, since test bot is very simple and does not find all vulnerabilities
 
-        # score = score_response(expected_response, result)
-        # assert score >= 4, f"{filename}: Score is {score}, expected at least 4"
+        score, reason, vulnerabilities_expected_and_found, vulnerabilities_expected_but_not_found, vulnerabilities_found_but_not_expected = score_response(expected_response, result)
+        assert score >= 2, f"{filename}: Score is {score}, expected at least 2"
+
         with open(f"{filename}.new2.json", "w") as f:
             f.write(result.model_dump_json(indent=4))
     
-    return
-
     secure_filenames = get_all_code_samples(vulnerable=False)
     for filename in secure_filenames:
         code, expected_response = load_sample_file(filename)
@@ -36,8 +34,8 @@ def test_response_for_every_sample():
         assert isinstance(result, PredictionResponse)
         with open(f"{filename}.new2.json", "w") as f:
             f.write(result.model_dump_json(indent=4))
-        # assert result.prediction == expected_response.prediction, f"{filename}: Prediction is {result.prediction}, expected {expected_response.prediction}"
+        assert result.prediction == expected_response.prediction, f"{filename}: Prediction is {result.prediction}, expected {expected_response.prediction}"
         # assert len(result.vulnerabilities) == len(expected_response.vulnerabilities), f"Number of vulnerabilities for {filename} is {len(result.vulnerabilities)}, expected {len(expected_response.vulnerabilities)}. Expected vulnerabilities: {expected_response.model_dump_json(indent=2)}\n\nResult vulnerabilities: {result.model_dump_json(indent=2)}\n\n"
 
-        score = score_response(expected_response, result)
-        # assert score >= 4, f"{filename}: Score is {score}, expected at least 4"
+        score, reason, vulnerabilities_expected_and_found, vulnerabilities_expected_but_not_found, vulnerabilities_found_but_not_expected = score_response(expected_response, result)
+        assert score >= 4, f"{filename}: Score is {score}, expected at least 4"

@@ -61,7 +61,7 @@ def test_costs_money_score_reponse_score_5():
     vuln1_copy = vuln1.model_copy()
     vuln1_copy.short_description += " found" # so it's different text but effectively same vulnerability
     response = PredictionResponse(prediction=True, vulnerabilities=[vuln1_copy])
-    result = score_response(expected_response, response)
+    result, _, _, _, _ = score_response(expected_response, response)
     assert result == 5
 
 def test_costs_money_score_response_score_4():
@@ -70,7 +70,7 @@ def test_costs_money_score_response_score_4():
     
     expected_response = PredictionResponse(prediction=True, vulnerabilities=[vuln1, vuln2])
     response = PredictionResponse(prediction=True, vulnerabilities=[vuln1])
-    result = score_response(expected_response, response)
+    result, _, _, _, _ = score_response(expected_response, response)
     assert result == 4
 
 def test_costs_money_score_response_score_3():
@@ -80,7 +80,7 @@ def test_costs_money_score_response_score_3():
     incorrect = vuln4 # reassign for clarity
     expected_response = PredictionResponse(prediction=True, vulnerabilities=[vuln1, vuln2, vuln3])
     response = PredictionResponse(prediction=True, vulnerabilities=[vuln1, vuln2, incorrect])
-    result = score_response(expected_response, response)
+    result, _, _, _, _ = score_response(expected_response, response)
     assert result == 3
 
 def test_costs_money_score_response_score_2():
@@ -89,7 +89,7 @@ def test_costs_money_score_response_score_2():
     
     expected_response = PredictionResponse(prediction=True, vulnerabilities=[vuln1, vuln2, vuln3])
     response = PredictionResponse(prediction=True, vulnerabilities=[vuln1])
-    result = score_response(expected_response, response)
+    result, _, _, _, _ = score_response(expected_response, response)
     assert result == 2
 
 def test_costs_money_score_response_score_1():
@@ -98,5 +98,5 @@ def test_costs_money_score_response_score_1():
     
     expected_response = PredictionResponse(prediction=True, vulnerabilities=[vuln1, vuln4])
     response = PredictionResponse(prediction=True, vulnerabilities=[vuln2, vuln3])
-    result = score_response(expected_response, response)
+    result, _, _, _, _ = score_response(expected_response, response)
     assert result == 1
