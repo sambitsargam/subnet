@@ -10,6 +10,8 @@ from tenacity import (
     wait_exponential,
     retry_if_exception_type
 )
+from rich.console import Console
+console = Console()
 
 # Define generic type T
 T = TypeVar('T')
@@ -26,6 +28,8 @@ DEFAULT_MODEL = "gpt-4o-mini-2024-07-18"
 DEFAULT_TEMPERATURE = 0.1
 DEFAULT_MAX_TOKENS = 1000
 
+# At the top with other globals
+TOTAL_SPEND_CENTS = 0.0
 
 COST_USD_PER_MILLION_TOKENS = {
     "gpt-4o": {
@@ -94,9 +98,12 @@ def chat_completion(
     try:
         response = client.beta.chat.completions.parse(**parameters)
         fee, description = get_token_cost(response)
-        fee_str = f"\033[32m💰 LLM: ¢{fee:.3f} -- {description}\033[0m"
-        print(fee_str)
-        bt.logging.info(fee_str)
+
+        global TOTAL_SPEND_CENTS
+        TOTAL_SPEND_CENTS += fee
+
+        if bt.logging.current_state_value in ["Debug", "Trace"]:
+            console.print(f"💰 LLM: [green]¢{fee:.3f}[/green] -- [light_green]{description}[/light_green] -- Total: [bold green]¢{TOTAL_SPEND_CENTS:.3f}[/bold green]")
 
         # Guard against empty or invalid responses
         if response is None or response.choices is None or not hasattr(response, "choices") or len(response.choices) == 0 or not hasattr(response.choices[0], "message") or response.choices[0].message is None:
