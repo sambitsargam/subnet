@@ -51,6 +51,11 @@ COST_USD_PER_MILLION_TOKENS = {
         "input": 3.00,
         "input_cached": 1.50,
         "output": 12.00
+    },
+    "testing": {
+        "input": 0.00,
+        "input_cached": 0.00,
+        "output": 0.00
     }
 }
 
@@ -97,13 +102,15 @@ def chat_completion(
 
     try:
         response = client.beta.chat.completions.parse(**parameters)
-        fee, description = get_token_cost(response)
+        try:
+            if bt.logging.current_state_value in ["Debug", "Trace"]:
+                token_fee, token_cost_description = get_token_cost(response)
+                global TOTAL_SPEND_CENTS
+                TOTAL_SPEND_CENTS += token_fee
+                console.print(f"💰 LLM: [green]¢{token_fee:.3f}[/green] -- [light_green]{token_cost_description}[/light_green] -- Total: [bold green]¢{TOTAL_SPEND_CENTS:.3f}[/bold green]")
+        except Exception as e:
+            bt.logging.error(f"Error getting token cost: {e}")
 
-        global TOTAL_SPEND_CENTS
-        TOTAL_SPEND_CENTS += fee
-
-        if bt.logging.current_state_value in ["Debug", "Trace"]:
-            console.print(f"💰 LLM: [green]¢{fee:.3f}[/green] -- [light_green]{description}[/light_green] -- Total: [bold green]¢{TOTAL_SPEND_CENTS:.3f}[/bold green]")
 
         # Guard against empty or invalid responses
         if response is None or response.choices is None or not hasattr(response, "choices") or len(response.choices) == 0 or not hasattr(response.choices[0], "message") or response.choices[0].message is None:
@@ -154,13 +161,22 @@ def get_token_cost(response: openai.types.completion.Completion) -> tuple[float,
     description = ""
     fee = 0
 
+    # Handle empty or invalid model name
+    if not response.model or not isinstance(response.model, str):
+        raise ValueError("Model name invalid")
+
     # Remove version number from model name, e.g. o1-mini-2024-09-12
     model = "-".join(filter(lambda x: not x.isdigit(), response.model.split("-")))
+    model = model.strip()
 
+    # Make sure model is in the cost dictionary
+    if model not in COST_USD_PER_MILLION_TOKENS:
+        raise ValueError(f"Model {model} not found in cost dictionary: {COST_USD_PER_MILLION_TOKENS}")
+
+    # Get the costs for this model
+    model_costs = COST_USD_PER_MILLION_TOKENS[model]
     # Convert dollar costs to cents
-    costs = {
-        model: {k: v * 100 for k, v in COST_USD_PER_MILLION_TOKENS[model].items()}
-    }[model]
+    costs = {k: v * 100 for k, v in model_costs.items()}
 
     cached = response.usage.prompt_tokens_details.cached_tokens
     

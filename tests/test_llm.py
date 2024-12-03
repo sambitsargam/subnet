@@ -8,12 +8,15 @@ import bittensor as bt
 from bitsec.utils.data import get_code_sample
 
 SPEND_MONEY = os.environ.get("SPEND_MONEY", False)
+if SPEND_MONEY:
+    bt.logging.set_debug()
+
 TEST_RESPONSE = "Test response"
 
 def test_chat_completion_with_real_response():
     """Test response with real response."""
     if not SPEND_MONEY:
-        return # costs money, comment out to run
+        return
     code, expected_response = get_code_sample(vulnerable=False)
     result = chat_completion(code, response_format=PredictionResponse)
     assert isinstance(result, PredictionResponse)
@@ -46,8 +49,8 @@ def test_chat_completion_with_format(mock_openai_response):
         True,
         [Vulnerability(
             line_ranges=[LineRange(start=2, end=5)],
-            vulnerability_type="Test Vulnerability",
-            reason_for_potential_financial_loss="Test Reason"
+            short_description="Test Vulnerability",
+            detailed_description="Test Reason"
         )]
     ])
     mock_openai_response.choices[0].message.parsed = expected_response
