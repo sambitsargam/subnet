@@ -1,5 +1,6 @@
 import os
 import random
+import bittensor as bt
 from typing import Tuple, List
 from bitsec.protocol import PredictionResponse
 
