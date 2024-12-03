@@ -1,11 +1,14 @@
 import os
 import pytest
+import bittensor as bt
 from unittest.mock import patch
 import numpy as np
 from bitsec.validator.reward import reward, score_response
 from bitsec.protocol import PredictionResponse, Vulnerability, LineRange
 
 SPEND_MONEY = os.environ.get("SPEND_MONEY", False)
+if SPEND_MONEY:
+    bt.logging.set_debug()
 
 @pytest.fixture
 def mock_prediction_response():
