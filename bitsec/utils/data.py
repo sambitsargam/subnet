@@ -62,8 +62,25 @@ def load_sample_file(sample_filename_with_path: str) -> Tuple[str, PredictionRes
         expected_response = PredictionResponse.from_json(expected_response_file.read())
         return sample_file.read(), expected_response
 
-def create_challenge(code: str, label: float) -> str:
+def create_challenge(vulnerable: bool) -> Tuple[str, PredictionResponse]:
+    # 1. pick clean codebase
+    sample_code, expected_response = get_code_sample(vulnerable=False)
+    bt.logging.info(f"got sample code {sample_code}")
+
+    # 2. inject / don't inject vuln
+    if vulnerable:
+        # TODO inject vuln
+        pass
+    else:
+        # TODO don't inject vuln
+        pass
+
+    # 3. make sure challenge codebase can compile, has labeled vuln
+    # 4.a miner submits wrong vuln
+    # 4.b miner submits right vuln
+    # 5. graded correctly
     # TODO expand more codebases
     # TODO expand more vulnerabilities
     ## add layers of noise to make challenge harder
-    return code
+
+    return sample_code, expected_response

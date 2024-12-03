@@ -50,12 +50,7 @@ async def forward(self):
     miner_uids = get_random_uids(self, k=self.config.neuron.sample_size)
 
     vulnerable = random.random() < 0.5
-    sample_code, expected_response = get_code_sample(vulnerable=vulnerable)
-    bt.logging.info(f"got code from {sample_code}")
-
-    label = expected_response
-    
-    challenge = create_challenge(sample_code, label)
+    challenge, label = create_challenge(vulnerable=vulnerable)
     bt.logging.info(f"created challenge")
 
     # The dendrite client queries the network.
