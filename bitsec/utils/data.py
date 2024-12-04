@@ -70,18 +70,57 @@ def create_challenge(vulnerable: bool) -> Tuple[str, PredictionResponse]:
 
     # 2. inject / don't inject vuln
     if vulnerable:
-        # TODO inject vuln
-        pass
+        # inject vuln by taking a sample vulnerability from samples/vulnerabilities, 
+        # TODO fix to sample vulnerabilities
+        vuln_file = os.path.join(SAMPLE_DIR, 'vulnerabilities', 'bad-random.md')
+        with open(vuln_file, 'r') as f:
+            long_description = f.read()
+        
+        # Create a prompt to inject the vulnerability
+        prompt = f"""You are a smart contract security expert. Your task is to modify the given smart contract code to inject a vulnerability.
+
+Here is the vulnerability description:
+{long_description}
+
+Here is the clean code:
+{sample_code}
+
+Instructions:
+1. Modify the code to use a vulnerable source of randomness (like block.timestamp or blockhash)
+2. Make the changes look natural, as if a developer made them without realizing the security implications
+3. Return ONLY the modified code, no explanations
+
+Modified code:"""
+
+        try:
+            # Use the LLM to inject the vulnerability
+            from bitsec.utils.llm import chat_completion
+            modified_code = chat_completion(prompt)
+            
+            # Create a response indicating the vulnerability
+            vulnerable_response = PredictionResponse(
+                prediction=True,
+                vulnerabilities=[{
+                    # TODO fix line ranges
+                    "line_ranges": [{"start": 1, "end": 100}],
+                    "short_description": "Insecure source of randomness",
+                    "detailed_description": "The contract uses block.timestamp or blockhash as a source of randomness, which can be manipulated by miners to influence the outcome."
+                }]
+            )
+            
+            return modified_code, vulnerable_response
+        except Exception as e:
+            bt.logging.error(f"Failed to inject vulnerability: {e}")
+
     else:
-        # TODO don't inject vuln
+        # do nothing, send clean code
         pass
 
-    # 3. make sure challenge codebase can compile, has labeled vuln
-    # 4.a miner submits wrong vuln
-    # 4.b miner submits right vuln
-    # 5. graded correctly
-    # TODO expand more codebases
-    # TODO expand more vulnerabilities
-    ## add layers of noise to make challenge harder
-
+# 3. make sure challenge codebase can compile, has labeled vuln
+# 4.a miner submits wrong vuln
+# 4.b miner submits right vuln
+# 5. graded correctly
+# TODO expand more codebases
+# TODO expand more vulnerabilities
+## add layers of noise to make challenge harder
     return sample_code, expected_response

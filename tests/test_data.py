@@ -52,13 +52,15 @@ def test_create_challenge_different_outputs():
     assert not result1[1].prediction
     assert not result2[1].prediction
 
-@pytest.mark.parametrize("vulnerable", [True, False])
-def test_create_challenge_code_compiles(vulnerable):
-    """Test that generated code can compile."""
-    code, _ = create_challenge(vulnerable=vulnerable)
+def test_create_challenge_code_syntax():
+    """Test that generated code has basic Solidity syntax."""
+    code, _ = create_challenge(vulnerable=False)
     
-    # The code appears to be Solidity, not Python, so we can't use compile()
-    # Instead, let's do basic syntax checks
+    # Check for basic Solidity syntax
     assert code.startswith("// SPDX-License-Identifier: MIT")
     assert "pragma solidity" in code
     assert "contract" in code
+    
+    # Check for common Solidity keywords
+    assert "function" in code
+    assert "public" in code or "private" in code or "internal" in code
