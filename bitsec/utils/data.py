@@ -1,20 +1,53 @@
 import os
 import random
+import tempfile
+import subprocess
 import bittensor as bt
 from typing import Tuple, List
 from bitsec.protocol import PredictionResponse
+from bitsec.utils.llm import chat_completion
 
 SAMPLE_DIR = os.path.join(os.path.dirname(__file__), '..', '..', 'samples')
 VULNERABLE_CODE_DIR = '/vulnerable'
 SECURE_CODE_DIR = '/clean-codebases'
 
+def verify_solidity_compilation(code: str) -> bool:
+    """
+    Verify that the Solidity code compiles using Foundry.
+    
+    Args:
+        code (str): The Solidity code to verify
+        
+    Returns:
+        bool: True if compilation succeeds, False otherwise
+    """
+    with tempfile.TemporaryDirectory() as tmpdir:
+        # Create a basic Foundry project structure
+        os.makedirs(os.path.join(tmpdir, "src"))
+        contract_path = os.path.join(tmpdir, "src", "Contract.sol")
+        
+        # Write the code to a temporary file
+        with open(contract_path, 'w') as f:
+            f.write(code)
+            
+        try:
+            # Initialize Foundry project
+            subprocess.run(["forge", "init", "--no-commit"], cwd=tmpdir, check=True, capture_output=True)
+            
+            # Try to compile
+            result = subprocess.run(["forge", "build"], cwd=tmpdir, check=True, capture_output=True)
+            return True
+        except subprocess.CalledProcessError as e:
+            bt.logging.error(f"Compilation failed: {e.stderr.decode()}")
+            return False
+
 def get_code_sample(vulnerable: bool) -> Tuple[str, PredictionResponse]:
     """
     Get a random code sample and its expected response as a PredictionResponse object from the samples directory.
-
+    
     Args:
         vulnerable (bool): Whether to get a random vulnerable or secure code sample.
-
+        
     Returns:
         Tuple[str, PredictionResponse]: A tuple containing the code sample, and its expected response as a PredictionResponse object.
     """
@@ -94,7 +127,6 @@ Modified code:"""
 
         try:
             # Use the LLM to inject the vulnerability
-            from bitsec.utils.llm import chat_completion
             modified_code = chat_completion(prompt)
             
             # Create a response indicating the vulnerability
