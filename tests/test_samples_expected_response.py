@@ -1,5 +1,6 @@
 import os
 import pytest
+from flaky import flaky
 import bittensor as bt
 from bitsec.miner.prompt import analyze_code
 from bitsec.protocol import PredictionResponse, Vulnerability, LineRange
@@ -39,6 +40,7 @@ def setup_identical_responses():
     
     return response1, response2
 
+@flaky(max_runs=3)
 def test_similarity_of_short_descriptions1():
     if not SPEND_MONEY:
         return
@@ -50,6 +52,7 @@ def test_similarity_of_short_descriptions1():
     score, reason, _, _, _ = score_response(response1, response2)
     assert score >= 4, f"Score is {score}, expected 4. Reason: {reason}\nShort descriptions: {response1.vulnerabilities[0].short_description} and {short_description_2}"
 
+@flaky(max_runs=3)
 def test_similarity_of_short_descriptions2():
     if not SPEND_MONEY:
         return
@@ -60,6 +63,7 @@ def test_similarity_of_short_descriptions2():
     score, reason, _, _, _ = score_response(response1, response2)
     assert score >= 4, f"Score is {score}, expected 4. Reason: {reason}\nShort descriptions: {response1.vulnerabilities[0].short_description} and {short_description_2}"
 
+@flaky(max_runs=3)
 def test_similarity_of_long_descriptions():
     if not SPEND_MONEY:
         return
@@ -71,6 +75,7 @@ def test_similarity_of_long_descriptions():
     assert score >= 4, f"Score is {score}, expected 4. Reason: {reason}\nLong descriptions: {response1.vulnerabilities[0].detailed_description} and {long_description_2}"
 
 
+@flaky(max_runs=3)
 def test_response_for_every_sample():
     """Test response with real response."""
     if not SPEND_MONEY:

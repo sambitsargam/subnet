@@ -1,5 +1,6 @@
 import pytest
 import os
+from flaky import flaky
 from unittest.mock import patch, MagicMock
 from bitsec.utils.llm import chat_completion
 from bitsec.protocol import PredictionResponse, Vulnerability, LineRange
@@ -13,6 +14,7 @@ if SPEND_MONEY:
 
 TEST_RESPONSE = "Test response"
 
+@flaky(max_runs=3)
 def test_chat_completion_with_real_response():
     """Test response with real response."""
     if not SPEND_MONEY:
