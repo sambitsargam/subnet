@@ -98,7 +98,7 @@ def test_chat_completion_retry():
         ]
         result = chat_completion("Test prompt")
         assert result == TEST_RESPONSE
-        assert mock_parse.call_count == 2
+        assert mock_parse.call_count == 2, f"Expected 2 calls to parse, got {mock_parse.call_count}"
 
 def test_chat_completion_refused():
     """Test handling of refused prompts."""
