@@ -26,19 +26,6 @@ def test_chat_completion_with_real_response():
     # do not compare vulnerabilities, since LLM may write in different way
     # assert result.vulnerabilities == expected_response.vulnerabilities
 
-
-@pytest.fixture
-def mock_openai_response():
-    """Create a mock OpenAI API response."""
-    message = MagicMock()
-    message.content = TEST_RESPONSE
-    message.parsed = None
-    message.refusal = None
-    
-    response = MagicMock()
-    response.choices = [MagicMock(message=message)]
-    return response
-
 def test_chat_completion_basic(mock_openai_response):
     """Test basic text response from chat completion."""
     with patch('bitsec.utils.llm.client.beta.chat.completions.parse', return_value=mock_openai_response):
@@ -110,3 +97,16 @@ def test_chat_completion_refused():
     with patch('bitsec.utils.llm.client.beta.chat.completions.parse', return_value=mock_response):
         with pytest.raises(ValueError, match="Prompt was refused"):
             chat_completion("Test prompt")
+
+
+@pytest.fixture
+def mock_openai_response():
+    """Create a mock OpenAI API response."""
+    message = MagicMock()
+    message.content = TEST_RESPONSE
+    message.parsed = None
+    message.refusal = None
+    
+    response = MagicMock()
+    response.choices = [MagicMock(message=message)]
+    return response
