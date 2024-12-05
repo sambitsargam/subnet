@@ -127,7 +127,7 @@ Modified code:"""
 
         try:
             # Use the LLM to inject the vulnerability
-            modified_code = chat_completion(prompt)
+            modified_code = chat_completion(prompt, max_tokens=10000)
             
             # Create a response indicating the vulnerability
             vulnerable_response = PredictionResponse(
