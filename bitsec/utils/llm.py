@@ -105,11 +105,12 @@ def chat_completion(
         try:
             if bt.logging.current_state_value in ["Debug", "Trace"]:
                 token_fee, token_cost_description = get_token_cost(response)
-                global TOTAL_SPEND_CENTS
-                TOTAL_SPEND_CENTS += token_fee
-                console.print(f"💰 LLM: [green]¢{token_fee:.3f}[/green] -- [light_green]{token_cost_description}[/light_green] -- Total: [bold green]¢{TOTAL_SPEND_CENTS:.3f}[/bold green]")
+                if token_fee > 0:
+                    global TOTAL_SPEND_CENTS
+                    TOTAL_SPEND_CENTS += token_fee
+                    console.print(f"💰 LLM: [green]¢{token_fee:.3f}[/green] -- [light_green]{token_cost_description}[/light_green] -- Total: [bold green]¢{TOTAL_SPEND_CENTS:.3f}[/bold green]")
         except Exception as e:
-            bt.logging.error(f"Error getting token cost: {e}")
+            bt.logging.info(f"Error getting token cost: {e}")
 
 
         # Guard against empty or invalid responses
@@ -158,6 +159,9 @@ def get_token_cost(response: openai.types.completion.Completion) -> tuple[float,
             - float: Total cost in cents
             - str: Detailed description of the cost breakdown
     """
+    if "usage" not in response or response.usage is None or response.usage.completion_tokens is None or response.usage.prompt_tokens is None or response.usage.total_tokens is None:
+        return 0.0, "No usage data"
+
     description = ""
     fee = 0
 
