@@ -17,9 +17,10 @@
 # OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 # DEALINGS IN THE SOFTWARE.
 
+import json
 import bittensor as bt
 import pydantic
-from typing import List, Tuple
+from typing import List, Tuple, Union
 
 def prepare_code_synapse(code: str):
     """
@@ -55,32 +56,89 @@ def prepare_code_synapse(code: str):
 
 # Vulnerability is a lines_of_code_range in the codebase with description
 class LineRange(pydantic.BaseModel):
-    start: int
-    end: int
+    start: int = pydantic.Field(description="Start line of the range")
+    end: int = pydantic.Field(description="End line of the range")
+    
+    model_config = { "populate_by_name": True }
+
+    # get field attrs from model
+    def __getattr__(self, name):
+        try:
+            return self.model_dump()[name]
+        except KeyError:
+            raise AttributeError(f"'{self.__class__.__name__}' has no attribute '{name}'")
+
+    def __dict__(self):
+        """Make JSON serializable by default."""
+        return self.model_dump()
 
 class Vulnerability(pydantic.BaseModel):
-    int_ranges: List[LineRange] = pydantic.Field(
-        description="An array of lines of code ranges. Optional, but recommended. .",
+    line_ranges: List[LineRange] = pydantic.Field(
+        description="An array of lines of code ranges where the vulnerability is located. Optional, but strongly recommended. Consecutive lines should be a single range, eg lines 1-3 should NOT be [{start: 1, end: 1}, {start: 2, end: 2}, {start: 3, end: 3}] INSTEAD SHOULD BE [{start: 1, end: 3}].",
     )
 
-    vulnerability_type: str = pydantic.Field(
-        description="Summary of vulnerability type, succint answers favored.",
+    short_description: str = pydantic.Field(
+        description="High level summary of vulnerability, succint answers favored.",
     )
 
-    reason_for_potential_financial_loss: str = pydantic.Field(
-        description="Reason for potential financial loss",
+    detailed_description: str = pydantic.Field(
+        description="Detailed description of the vulnerability, including why it could lead to financial loss.",
     )
     
+    model_config = { "populate_by_name": True }
+
+    # get field attrs from model
+    def __getattr__(self, name):
+        try:
+            return self.model_dump()[name]
+        except KeyError:
+            raise AttributeError(f"'{self.__class__.__name__}' has no attribute '{name}'")
+
+    def __dict__(self):
+        """Make JSON serializable by default."""
+        return self.model_dump()
+
 # PredictionResponse is the response from the Miner
 class PredictionResponse(pydantic.BaseModel):
-    prediction: bool = pydantic.Field(..., description="Probability of vulnerability")
-    vulnerabilities: List[Vulnerability] = pydantic.Field(default_factory=list, description="List of detected vulnerabilities")
+    """
+    PredictionResponse contains the predicted vulnerability status and the list of vulnerabilities.
+    To turn into JSON, use the model_dump_json() instance method.
+    """
+    prediction: bool = pydantic.Field(
+        description="Vulnerabilities were found"
+    )
+    vulnerabilities: List[Vulnerability] = pydantic.Field(
+        description="List of detected vulnerabilities"
+    )
+
+    model_config = { "populate_by_name": True }
+
+    # get field attrs from model
+    def __getattr__(self, name):
+        try:
+            return self.model_dump()[name]
+        except KeyError:
+            raise AttributeError(f"'{self.__class__.__name__}' has no attribute '{name}'")
 
     @classmethod
-    def from_tuple(cls, data: tuple[bool, List[Vulnerability]]) -> 'PredictionResponse':
+    def from_json(cls, json_data: Union[str, dict]) -> 'PredictionResponse':
+        """Create a PredictionResponse from JSON data.
+        
+        Args:
+            json_data: Either a JSON string or a dictionary containing the response data
+            
+        Returns:
+            PredictionResponse: A new instance of PredictionResponse
+        """
+        if isinstance(json_data, str):
+            json_data = json.loads(json_data)
+        return cls(**json_data)
+
+    @classmethod
+    def from_tuple(cls, data: Tuple[bool, List[Vulnerability]]) -> 'PredictionResponse':
         return cls(prediction=data[0], vulnerabilities=data[1])
 
-    def to_tuple(self) -> tuple[bool, List[Vulnerability]]:
+    def to_tuple(self) -> Tuple[bool, List[Vulnerability]]:
         return (self.prediction, self.vulnerabilities)
 
 class CodeSynapse(bt.Synapse):
