@@ -39,3 +39,9 @@ pyenv activate bt-venv
 pip install -r requirements.txt
 ./start_miner.sh
 ```
+
+# Validator installation
+When generating synthetic vulnerabilities, you need to make sure the code is valid Solidity. We use Foundry to compile the code.
+1. If on a Mac, you may need to run `brew install libusb` first.
+2. `curl -L https://foundry.paradigm.xyz | bash`
+3. Then install by running: `foundryup`
