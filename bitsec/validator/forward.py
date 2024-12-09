@@ -22,7 +22,7 @@ import bittensor as bt
 
 from bitsec.protocol import prepare_code_synapse
 from bitsec.validator.reward import reward
-from bitsec.utils.data import get_code_sample, create_challenge
+from bitsec.utils.data import create_challenge
 from bitsec.utils.uids import get_random_uids
 
 

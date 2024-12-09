@@ -1,15 +1,17 @@
 import os
+import pydantic
 import random
 import tempfile
 import subprocess
 import bittensor as bt
-from typing import Tuple, List
+from typing import List, Tuple
 from bitsec.protocol import PredictionResponse
 from bitsec.utils.llm import chat_completion
+from bitsec.utils.logging import shorten_to_filename
 
 SAMPLE_DIR = os.path.join(os.path.dirname(__file__), '..', '..', 'samples')
-VULNERABLE_CODE_DIR = '/vulnerable'
-SECURE_CODE_DIR = '/clean-codebases'
+VULNERABILITIES_DIR = 'vulnerabilities'
+SECURE_CODE_DIR = 'clean-codebases'
 
 def verify_solidity_compilation(code: str) -> bool:
     """
@@ -20,7 +22,16 @@ def verify_solidity_compilation(code: str) -> bool:
         
     Returns:
         bool: True if compilation succeeds, False otherwise
+        
+    Raises:
+        ForgeNotInstalledError: If Forge toolchain is not found in system PATH
     """
+    # Check for basic Solidity syntax
+    strip_indentation = lambda s: '\n'.join([line.strip() for line in s.split('\n') if line.strip()])
+    if not strip_indentation(code).startswith("// SPDX-License-Identifier: MIT\npragma solidity"):
+        bt.logging.error("Code does not start with SPDX-License-Identifier: MIT\npragma solidity")
+        return False
+   
     with tempfile.TemporaryDirectory() as tmpdir:
         # Create a basic Foundry project structure
         os.makedirs(os.path.join(tmpdir, "src"))
@@ -32,127 +43,124 @@ def verify_solidity_compilation(code: str) -> bool:
             
         try:
             # Initialize Foundry project
-            subprocess.run(["forge", "init", "--no-commit"], cwd=tmpdir, check=True, capture_output=True)
+            init_result = subprocess.run(["forge", "init", "--no-commit", "--force"], cwd=tmpdir, capture_output=True)
+            init_result.check_returncode()  # This will raise CalledProcessError if forge init fails
             
             # Try to compile
-            result = subprocess.run(["forge", "build"], cwd=tmpdir, check=True, capture_output=True)
+            build_result = subprocess.run(["forge", "build"], cwd=tmpdir, capture_output=True)
+            build_result.check_returncode()  # This will raise CalledProcessError if forge build fails
             return True
         except subprocess.CalledProcessError as e:
             bt.logging.error(f"Compilation failed: {e.stderr.decode()}")
             return False
 
-def get_code_sample(vulnerable: bool) -> Tuple[str, PredictionResponse]:
+def _get_all_filenames(directory: str, extension: str) -> List[str]:
     """
-    Get a random code sample and its expected response as a PredictionResponse object from the samples directory.
-    
+    Get all filenames with the given extension from the selected directory.
+
     Args:
-        vulnerable (bool): Whether to get a random vulnerable or secure code sample.
+        directory (str): The directory to get the filenames from
+        extension (str): The extension of the files to get. Eg '.sol' or '.md'
         
     Returns:
-        Tuple[str, PredictionResponse]: A tuple containing the code sample, and its expected response as a PredictionResponse object.
+        List[str]: List of filenames with the given extension in the selected directory
     """
-    sample_files = get_all_code_samples(vulnerable)
-    sample_filename = random.choice(sample_files)
-    return load_sample_file(sample_filename)
+    return [os.path.join(SAMPLE_DIR, directory, f) for f in os.listdir(os.path.join(SAMPLE_DIR, directory)) if f.endswith(extension)]
 
-def get_all_code_samples(vulnerable: bool) -> List[str]:
+def _get_random_filename(directory: str, extension: str) -> str:
     """
-    Get array of filenames for all code samples in vulnerable or secure directory.
+    Get a random filename with the given extension from the selected directory.
 
     Args:
-        vulnerable (bool): Whether to get the filenames for vulnerable or secure code samples.
+        extension (str): The extension of the files to get. Eg '.sol' or '.md'
 
     Returns:
-        List[str]: The array of filenames for all code samples in selected directory.
+        str: The filename of the random file with the given extension in the selected directory.
     """
-    code_dir = SAMPLE_DIR + (VULNERABLE_CODE_DIR if vulnerable else SECURE_CODE_DIR)
-    sample_files = [os.path.join(code_dir, f) for f in os.listdir(code_dir) if f.endswith('.sol')]
-    if not sample_files:
-        raise ValueError("No code sample files found")
-    return sample_files
+    files = _get_all_filenames(directory, extension)
+    if not files:
+        raise ValueError(f"No files found with extension {extension} in directory {directory}")
+    return random.choice(files)
 
-def load_sample_file(sample_filename_with_path: str) -> Tuple[str, PredictionResponse]:
+def get_all_vulnerability_and_secure_filenames() -> Tuple[List[str], List[str]]:
     """
-    Load a sample file (.sol) and its expected response (same filename but .json) as a PredictionResponse object from the samples directory.
+    Get filenames of all vulnerability and secure code sample files.
+    
+    Returns:
+        Tuple[List[str], List[str]]: Lists of vulnerability and secure file paths
+    """
+    vuln_filenames = _get_all_filenames(VULNERABILITIES_DIR, '.md')
+    secure_filenames = _get_all_filenames(SECURE_CODE_DIR, '.sol')
+    return vuln_filenames, secure_filenames
 
+def create_challenge(vulnerable: bool, secure_filename: str | None = None, vulnerability_filename: str | None = None) -> Tuple[str, PredictionResponse]:
+    """
+    Create a challenge 
+    
     Args:
-        sample_filename_with_path (str): The filename of the sample file (including the .sol extension), including path.
-
-    Returns:
-        Tuple[str, PredictionResponse]: A tuple containing the code sample and its expected response as a PredictionResponse object.
-    """
-    if not os.path.exists(sample_filename_with_path):
-        raise FileNotFoundError(f"Sample file not found: {sample_filename_with_path}")
-    
-    parts = sample_filename_with_path.split('.')
-    parts_without_extension = parts[:-1]
-    sample_file_base = '.'.join(parts_without_extension)
-
-    expected_response_filename = sample_file_base + '.json'
-    if not os.path.exists(expected_response_filename):
-        raise FileNotFoundError(f"Expected response file not found: {expected_response_filename}")
-    
-    with open(sample_filename_with_path, 'r') as sample_file, open(expected_response_filename, 'r') as expected_response_file:
-        expected_response = PredictionResponse.from_json(expected_response_file.read())
-        return sample_file.read(), expected_response
-
-def create_challenge(vulnerable: bool) -> Tuple[str, PredictionResponse]:
-    # 1. pick clean codebase
-    sample_code, expected_response = get_code_sample(vulnerable=False)
-    bt.logging.info(f"got sample code {sample_code}")
-
-    # 2. inject / don't inject vuln
-    if vulnerable:
-        # inject vuln by taking a sample vulnerability from samples/vulnerabilities, 
-        # TODO fix to sample vulnerabilities
-        vuln_file = os.path.join(SAMPLE_DIR, 'vulnerabilities', 'bad-random.md')
-        with open(vuln_file, 'r') as f:
-            long_description = f.read()
+        vulnerable (bool): Whether to create a vulnerable or secure challenge
+        secure_filename (str | None): Path to the source file, optional
+        vulnerability_filename (str | None): Path to the vulnerability description, optional
         
-        # Create a prompt to inject the vulnerability
-        prompt = f"""You are a smart contract security expert. Your task is to modify the given smart contract code to inject a vulnerability.
+    Returns:
+        Tuple[str, PredictionResponse]: Generated code and expected response
+    """
+    if secure_filename is None:
+        # use random sample codebase
+        secure_filename = _get_random_filename(SECURE_CODE_DIR, '.sol')
+    bt.logging.info(f"creating challenge: vulnerable: {vulnerable}, secure code: {shorten_to_filename(secure_filename)}")
+    clean_code = open(secure_filename, 'r').read()
+        
+    if not vulnerable:
+        return clean_code, PredictionResponse(prediction=False, vulnerabilities=[])
+    
+    if vulnerability_filename is None:
+        # use random sample vulnerability
+        vulnerability_filename = _get_random_filename(VULNERABILITIES_DIR, '.md')
+
+    bt.logging.info(f"\tvulnerability: {shorten_to_filename(vulnerability_filename)}")
+    vulnerability_description = open(vulnerability_filename, 'r').read()
+    
+    # Create a prompt to inject the vulnerability
+    prompt = f"""You are a smart contract security expert. Your task is to modify the given smart contract code to inject a vulnerability.
 
 Here is the vulnerability description:
-{long_description}
+{vulnerability_description}
 
 Here is the clean code:
-{sample_code}
+{clean_code}
 
 Instructions:
-1. Modify the code to use a vulnerable source of randomness (like block.timestamp or blockhash)
-2. Make the changes look natural, as if a developer made them without realizing the security implications
-3. Return ONLY the modified code, no explanations
+1. Modify the code to inject the vulnerability described above.
+2. Make the changes look natural, as if a developer made them without realizing the security implications!!
+3. Return ONLY the modified code and vulnerability description, no explanations
 
 Modified code:"""
 
-        try:
-            # Use the LLM to inject the vulnerability
-            modified_code = chat_completion(prompt, max_tokens=10000, temperature=1.0)
-            
-            # Create a response indicating the vulnerability
-            vulnerable_response = PredictionResponse(
-                prediction=True,
-                vulnerabilities=[{
-                    # TODO fix line ranges
-                    "line_ranges": [{"start": 1, "end": 100}],
-                    "short_description": "Insecure source of randomness",
-                    "detailed_description": "The contract uses block.timestamp or blockhash as a source of randomness, which can be manipulated by miners to influence the outcome."
-                }]
-            )
-            
-            return modified_code, vulnerable_response
-        except Exception as e:
-            bt.logging.error(f"Failed to inject vulnerability: {e}")
+    # Pydantic model to parse the LLM response
+    class NewlyVulnerableCode(pydantic.BaseModel):
+        code: str
+        vulnerability_info: PredictionResponse
 
-    else:
-        # do nothing, send clean code
-        pass
-
-# 3. make sure challenge codebase can compile, has labeled vuln
-# 4.a miner submits wrong vuln
-# 4.b miner submits right vuln
-# 5. graded correctly
-# TODO expand more codebases
-# TODO expand more vulnerabilities
-## add layers of noise to make challenge harder
-    return sample_code, expected_response
+    try:
+        # Use the LLM to inject the vulnerability
+        response = chat_completion(
+            prompt,
+            max_tokens=10000,
+            temperature=1.0,
+            response_format=NewlyVulnerableCode
+        )
+        
+        modified_code = response.code
+        vulnerability_info = response.vulnerability_info
+        bt.logging.info(f"llm returned vulnerability prediction: {vulnerability_info}")
+        # TODO 3. make sure challenge codebase can compile, has labeled vuln
+        # 4.a miner submits wrong vuln
+        # 4.b miner submits right vuln
+        # 5. graded correctly
+        # TODO expand more codebases
+        # TODO expand more vulnerabilities
+        ## add layers of noise to make challenge harder
+        return modified_code, vulnerability_info
+    except Exception as e:
+        bt.logging.error(f"Failed to inject vulnerability: {e}")

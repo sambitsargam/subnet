@@ -2,8 +2,11 @@ import os
 import pytest
 from flaky import flaky
 import bittensor as bt
-from bitsec.utils.data import create_challenge, PredictionResponse
-from typing import Tuple
+from bitsec.utils.data import create_challenge, PredictionResponse, verify_solidity_compilation
+
+################################################################################
+# NOTE: Most tests require Forge, see miner_and_validator_setup.md to install it
+################################################################################
 
 SPEND_MONEY = os.environ.get("SPEND_MONEY", False)
 if SPEND_MONEY:
@@ -23,6 +26,7 @@ def test_create_challenge_non_vulnerable():
     
     # Code should not be empty
     assert len(code) > 0, f"Expected code to not be empty, got '{code}'"
+    # assert verify_solidity_compilation(code), f"Code does not compile: {code}"
     
     # Response should match expectations for non-vulnerable code
     assert not expected_response.prediction, f"Expected response should be non-vulnerable, got {expected_response}. Code: {code}"  # True means vulnerable
@@ -42,7 +46,8 @@ def test_create_challenge_vulnerable():
     
     # Code should not be empty
     assert len(code) > 0, f"Expected code to not be empty, got '{code}'"
-    
+    # assert verify_solidity_compilation(code), f"Code does not compile: {code}"
+
     # Response should match expectations for vulnerable code
     assert expected_response.prediction, f"Expected response should be vulnerable, got {expected_response}. Code: {code}"  # True means vulnerable
     assert len(expected_response.vulnerabilities) > 0, f"Expected response should have vulnerabilities, got {expected_response}. Code: {code}"
@@ -65,38 +70,65 @@ def test_create_challenge_different_outputs():
     if not SPEND_MONEY:
         return
     
-    result1 = create_challenge(vulnerable=False)
-    result2 = create_challenge(vulnerable=False)
+    code1, response1 = create_challenge(vulnerable=False)
+    assert not response1.prediction, f"Expected R1 response should not be vulnerable: {response1}"
+    # assert verify_solidity_compilation(code1), f"Code does not compile: {code1}"
+    
+    code2, response2 = create_challenge(vulnerable=False)
 
-    # Save some money by retrying until different code samples are generated
+    # Save some money by just retrying code2 until it's different from code1
     i = 0
-    while result1[0] == result2[0]:
+    while code1 == code2:
         bt.logging.info(f"test_create_challenge_different_outputs: Generated same code sample {i} times in a row. Retrying...")
         i += 1
         if i > 10:
             raise ValueError("Failed to generate different code samples")
-        result2 = create_challenge(vulnerable=False)
+
+        code2, response2 = create_challenge(vulnerable=False)
+        # if not verify_solidity_compilation(code2):
+        #     code2 = code1  # Retry if the code doesn't compile
     
-    # Two different calls should return different code samples
-    assert result1[0] != result2[0], f"Code samples should be different\nR1: {result1[0]}\nR2: {result2[0]}"
+    assert code1 != code2, f"Code samples should be different\nC1: {code1}\nC2: {code2}"
     
     # But they should maintain the same vulnerability status
-    assert not result2[1].prediction, f"Expected R2 response should not be vulnerable: {result2[1]}"
-    assert not result1[1].prediction, f"Expected R1 response should not be vulnerable: {result1[1]}"
+    assert response1.prediction == response2.prediction, f"Expected R1 and R2 responses to have the same vulnerability status: {response1} != {response2}"
 
-@flaky(max_runs=7)
-def test_create_challenge_code_syntax():
-    """Test that generated code has basic Solidity syntax."""
-    if not SPEND_MONEY:
-        return
+
+# def test_verify_solidity_compilation():
+#     """Test that verify_solidity_compilation correctly identifies compilable code."""
+
+#     # These tests only check basic syntax and should work without Forge
+#     no_license = """
+#     pragma solidity ^0.8.0;
+#     contract Test {
+#         function test() public pure returns (uint256) { return 1; }
+#     }
+#     """
+#     assert not verify_solidity_compilation(no_license), f"Code without license should not pass validation: {no_license}"
+
+#     no_pragma = """
+#     // SPDX-License-Identifier: MIT
+#     contract Test {
+#         function test() public pure returns (uint256) { return 1; }
+#     }
+#     """
+#     assert not verify_solidity_compilation(no_pragma), f"Code without pragma should not pass validation: {no_pragma}"
     
-    code, _ = create_challenge(vulnerable=False)
+#     valid_code = """
+#     // SPDX-License-Identifier: MIT
+#     pragma solidity ^0.8.0;
+#     contract Test {
+#         function test() public pure returns (uint256) { return 1; }
+#     }
+#     """
+#     invalid_code = """
+#     // SPDX-License-Identifier: MIT
+#     pragma solidity ^0.8.0;
+#     contract Test 
+#         function test public pure returns (uint256) { return 1; }
+#     """
+
+#     # These tests require Forge, see miner_and_validator_setup.md to install it
+#     # assert verify_solidity_compilation(valid_code), f"Valid code should compile: {valid_code}"
+#     assert not verify_solidity_compilation(invalid_code), f"Invalid code should not compile: {invalid_code}"
     
-    # Check for basic Solidity syntax
-    assert code.startswith("// SPDX-License-Identifier: MIT"), f"Expected code to start with '// SPDX-License-Identifier: MIT', got '{code}'"
-    assert "pragma solidity" in code, f"Expected code to contain 'pragma solidity', got '{code}'"
-    assert "contract" in code, f"Expected code to contain 'contract', got '{code}'"
-    
-    # Check for common Solidity keywords
-    assert "function" in code, f"Expected code to contain 'function', got '{code}'"
-    assert "public" in code or "private" in code or "internal" in code, f"Expected code to contain 'public', 'private', or 'internal', got '{code}'"

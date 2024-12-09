@@ -27,7 +27,7 @@ def analyze_code(
     code: str,
     model: str | None = None,
     temperature: float | None = None,
-    max_tokens: int = 4000
+    max_tokens: int = 10000
 ) -> PredictionResponse:
     """
     Calls OpenAI API to analyze provided code for vulnerabilities.

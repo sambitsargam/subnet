@@ -56,9 +56,10 @@ def prepare_code_synapse(code: str):
 
 # Vulnerability is a lines_of_code_range in the codebase with description
 class LineRange(pydantic.BaseModel):
+    """Represents a range of lines in code."""
     start: int = pydantic.Field(description="Start line of the range")
     end: int = pydantic.Field(description="End line of the range")
-    
+
     model_config = { "populate_by_name": True }
 
     # get field attrs from model
@@ -73,16 +74,15 @@ class LineRange(pydantic.BaseModel):
         return self.model_dump()
 
 class Vulnerability(pydantic.BaseModel):
+    """Represents a security vulnerability found in code."""
     line_ranges: List[LineRange] = pydantic.Field(
         description="An array of lines of code ranges where the vulnerability is located. Optional, but strongly recommended. Consecutive lines should be a single range, eg lines 1-3 should NOT be [{start: 1, end: 1}, {start: 2, end: 2}, {start: 3, end: 3}] INSTEAD SHOULD BE [{start: 1, end: 3}].",
     )
-
     short_description: str = pydantic.Field(
-        description="High level summary of vulnerability, succint answers favored.",
+        description="High level summary of vulnerability, succint answers favored."
     )
-
     detailed_description: str = pydantic.Field(
-        description="Detailed description of the vulnerability, including why it could lead to financial loss.",
+        description="Detailed description of the vulnerability, including why it could lead to financial loss."
     )
     
     model_config = { "populate_by_name": True }
@@ -97,6 +97,7 @@ class Vulnerability(pydantic.BaseModel):
     def __dict__(self):
         """Make JSON serializable by default."""
         return self.model_dump()
+    
 
 # PredictionResponse is the response from the Miner
 class PredictionResponse(pydantic.BaseModel):

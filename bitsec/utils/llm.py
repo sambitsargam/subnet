@@ -159,7 +159,7 @@ def get_token_cost(response: openai.types.completion.Completion) -> tuple[float,
             - float: Total cost in cents
             - str: Detailed description of the cost breakdown
     """
-    if "usage" not in response or response.usage is None or response.usage.completion_tokens is None or response.usage.prompt_tokens is None or response.usage.total_tokens is None:
+    if response.usage is None or response.usage.completion_tokens is None or response.usage.prompt_tokens is None or response.usage.total_tokens is None:
         return 0.0, "No usage data"
 
     description = ""
