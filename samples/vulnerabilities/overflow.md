@@ -99,3 +99,8 @@ contract Attack {
     }
 }
 ```
+
+## Preventative Techniques
+Use SafeMath to will prevent arithmetic overflow and underflow
+
+Solidity 0.8 defaults to throwing an error for overflow / underflow
