@@ -105,6 +105,7 @@ def score_response(expected_response: PredictionResponse, response: PredictionRe
 
 def get_rewards(
     label: bool,
+    expected_response: PredictionResponse,
     responses: List[PredictionResponse],
 ) -> np.ndarray:
     """
@@ -120,5 +121,5 @@ def get_rewards(
     # Get all the reward results by iteratively calling your reward() function.
     
     return np.array(
-        [reward(label, response) for response in responses]
+        [reward(label, expected_response, response) for response in responses]
     )
