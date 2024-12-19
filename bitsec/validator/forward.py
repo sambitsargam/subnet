@@ -21,7 +21,7 @@ import random
 import bittensor as bt
 
 from bitsec.protocol import prepare_code_synapse
-from bitsec.validator.reward import reward
+from bitsec.validator.reward import get_rewards
 from bitsec.utils.data import create_challenge
 from bitsec.utils.uids import get_random_uids
 
@@ -50,7 +50,7 @@ async def forward(self):
     miner_uids = get_random_uids(self, k=self.config.neuron.sample_size)
 
     vulnerable = random.random() < 0.5
-    challenge, label = create_challenge(vulnerable=vulnerable)
+    challenge, expected_response = create_challenge(vulnerable=vulnerable)
     bt.logging.info(f"created challenge")
 
     # The dendrite client queries the network.
@@ -66,7 +66,7 @@ async def forward(self):
 
     # TODO(developer): Define how the validator scores responses.
     # Adjust the scores based on responses from miners.
-    rewards = reward(vulnerable=vulnerable, expected_response=expected_response, responses=responses)
+    rewards = get_rewards(label=vulnerable, expected_response=expected_response, responses=responses)
 
     # bt.logging.info(f"Scored responses: {rewards}")
     # Update the scores based on the rewards. You may want to define your own update_scores function for custom behavior.
