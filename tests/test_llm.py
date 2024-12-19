@@ -1,3 +1,4 @@
+from pydantic import BaseModel
 import pytest
 import os
 from flaky import flaky
@@ -6,7 +7,7 @@ from bitsec.utils.llm import chat_completion
 from bitsec.protocol import PredictionResponse, Vulnerability, LineRange
 import openai
 import bittensor as bt
-from bitsec.utils.data import get_code_sample
+from bitsec.utils.data import create_challenge
 
 SPEND_MONEY = os.environ.get("SPEND_MONEY", False)
 if SPEND_MONEY:
@@ -15,16 +16,21 @@ if SPEND_MONEY:
 TEST_RESPONSE = "Test response"
 
 @flaky(max_runs=3)
-def test_chat_completion_with_real_response():
-    """Test response with real response."""
+def test_chat_completion_response_format():
+    """Test response with specific format type."""
     if not SPEND_MONEY:
         return
-    code, expected_response = get_code_sample(vulnerable=False)
-    result = chat_completion(code, response_format=PredictionResponse)
-    assert isinstance(result, PredictionResponse)
-    assert result.prediction == expected_response.prediction
-    # do not compare vulnerabilities, since LLM may write in different way
-    # assert result.vulnerabilities == expected_response.vulnerabilities
+    
+    # Make a simple object
+    class TestResponse(BaseModel):
+        can_answer: bool
+        city_name: str
+    
+    prompt = "What is the capital of France?"
+    result = chat_completion(prompt, response_format=TestResponse)
+    assert isinstance(result, TestResponse)
+    assert result.can_answer == True
+    assert result.city_name == "Paris"
 
 def test_chat_completion_basic(mock_openai_response):
     """Test basic text response from chat completion."""
