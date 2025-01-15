@@ -1,5 +1,5 @@
 from bitsec.protocol import PredictionResponse
-from bitsec.miner.prompt import code_to_vulns
+from bitsec.dummy_miner.prompt import code_to_vulns
 
 ## Predicting vulnerabilities is a multifaceted task. Here are some example improvements:
 # - train custom model
