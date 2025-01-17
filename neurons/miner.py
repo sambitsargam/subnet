@@ -174,4 +174,4 @@ if __name__ == "__main__":
     with Miner() as miner:
         while True:
             bt.logging.info(f"uid {miner.uid} tick")
-            time.sleep(60)
+            time.sleep(5)
