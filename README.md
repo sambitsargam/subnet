@@ -24,6 +24,10 @@ There will be two applications ready to use on Mainnet launch:
 - **Validators:** Responsible for challenging miners with a balanced mix of real and synthetic codebases, drawn from a diverse pool of sources.
 - **Resource Expansion:** We are committed to enhancing the validators' capabilities by increasing the diversity and volume of the codebase population, which supports rigorous testing and validation processes.
 
+## Setup
+
+To set up a miner or validator, use [miner_and_validator_setup.md](./miner_and_validator_setup.md)
+
 ## Using the API
 
 `scripts/check_code_via_api.py`
