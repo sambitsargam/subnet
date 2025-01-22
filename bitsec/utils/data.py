@@ -1,4 +1,5 @@
 import os
+from bitsec.utils.noise import add_comment_noise_simple
 import pydantic
 import random
 import tempfile
@@ -160,7 +161,10 @@ Modified code:"""
         # 5. graded correctly
         # TODO expand more codebases
         # TODO expand more vulnerabilities
+
         ## add layers of noise to make challenge harder
+        modified_code = add_comment_noise_simple(modified_code)
+
         return modified_code, vulnerability_info
     except Exception as e:
         bt.logging.error(f"Failed to inject vulnerability: {e}")

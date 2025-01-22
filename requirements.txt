@@ -7,3 +7,4 @@ numpy>=1
 setuptools>=68
 tenacity>=9
 openai>=1.47
+flaky>=3.8.1
