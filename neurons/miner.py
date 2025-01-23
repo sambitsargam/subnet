@@ -173,5 +173,5 @@ class Miner(BaseMinerNeuron):
 if __name__ == "__main__":
     with Miner() as miner:
         while True:
-            bt.logging.info(f"Miner running... {time.time()}")
+            bt.logging.info(f"uid {miner.uid} tick")
             time.sleep(5)

@@ -75,11 +75,13 @@ setup_environment() {
     # Create and set up wallets
     # This section can be skipped if wallets are already set up
     if [ ! -f ".wallets_setup" ]; then
-        btcli wallet new_coldkey --wallet.name $wallet --no_password --no_prompt
-        btcli wallet new_coldkey --wallet.name miner --no_password --no_prompt
-        btcli wallet new_hotkey --wallet.name miner --wallet.hotkey default --no_prompt
-        btcli wallet new_coldkey --wallet.name validator --no_password --no_prompt
-        btcli wallet new_hotkey --wallet.name validator --wallet.hotkey default --no_prompt
+        btcli wallet new_coldkey --wallet.name $wallet --no-use-password
+        btcli wallet new_coldkey --wallet.name miner --no-use-password
+        btcli wallet new_hotkey --wallet.name miner --wallet.hotkey default
+        btcli wallet new_coldkey --wallet.name miner2 --no-use-password
+        btcli wallet new_hotkey --wallet.name miner2 --wallet.hotkey default
+        btcli wallet new_coldkey --wallet.name validator --no-use-password
+        btcli wallet new_hotkey --wallet.name validator --wallet.hotkey default
         touch .wallets_setup
     fi
 
@@ -104,26 +106,26 @@ echo ">> localnet.sh is running in a detached tmux session named 'localnet'"
 echo ">> You can attach to this session with: tmux attach-session -t localnet"
 
 # Register a subnet (this needs to be run each time we start a new local chain)
-btcli subnet create --wallet.name $wallet --wallet.hotkey default --subtensor.chain_endpoint ws://127.0.0.1:9946 --no_prompt
+btcli subnet create --wallet.name $wallet --wallet.hotkey default --subtensor.chain_endpoint ws://127.0.0.1:9946
 
 # Transfer tokens to miner and validator coldkeys
 export BT_MINER_TOKEN_WALLET=$(cat ~/.bittensor/wallets/miner/coldkeypub.txt | grep -oP '"ss58Address": "\K[^"]+')
 export BT_VALIDATOR_TOKEN_WALLET=$(cat ~/.bittensor/wallets/validator/coldkeypub.txt | grep -oP '"ss58Address": "\K[^"]+')
 
-btcli wallet transfer --subtensor.network ws://127.0.0.1:9946 --wallet.name $wallet --dest $BT_MINER_TOKEN_WALLET --amount 1000 --no_prompt
-btcli wallet transfer --subtensor.network ws://127.0.0.1:9946 --wallet.name $wallet --dest $BT_VALIDATOR_TOKEN_WALLET --amount 10000 --no_prompt
+btcli wallet transfer --subtensor.network ws://127.0.0.1:9946 --wallet.name $wallet --dest $BT_MINER_TOKEN_WALLET --amount 1000
+btcli wallet transfer --subtensor.network ws://127.0.0.1:9946 --wallet.name $wallet --dest $BT_VALIDATOR_TOKEN_WALLET --amount 10000
 
 # Register wallet hotkeys to subnet
-btcli subnet register --wallet.name miner --netuid 1 --wallet.hotkey default --subtensor.chain_endpoint ws://127.0.0.1:9946 --no_prompt
-btcli subnet register --wallet.name validator --netuid 1 --wallet.hotkey default --subtensor.chain_endpoint ws://127.0.0.1:9946 --no_prompt
+btcli subnet register --wallet.name miner --netuid 1 --wallet.hotkey default --subtensor.chain_endpoint ws://127.0.0.1:9946
+btcli subnet register --wallet.name validator --netuid 1 --wallet.hotkey default --subtensor.chain_endpoint ws://127.0.0.1:9946
 
 # Add stake to the validator
-btcli stake add --wallet.name validator --wallet.hotkey default --subtensor.chain_endpoint ws://127.0.0.1:9946 --amount 10000 --no_prompt
+btcli stake add --wallet.name validator --wallet.hotkey default --subtensor.chain_endpoint ws://127.0.0.1:9946 --amount 10000
 
 # Ensure both the miner and validator keys are successfully registered.
 btcli subnet list --subtensor.chain_endpoint ws://127.0.0.1:9946
-btcli wallet overview --wallet.name validator --subtensor.chain_endpoint ws://127.0.0.1:9946 --no_prompt
-btcli wallet overview --wallet.name miner --subtensor.chain_endpoint ws://127.0.0.1:9946 --no_prompt
+btcli wallet overview --wallet.name validator --subtensor.chain_endpoint ws://127.0.0.1:9946
+btcli wallet overview --wallet.name miner --subtensor.chain_endpoint ws://127.0.0.1:9946
 
 cd ../bittensor-subnet-template
 
