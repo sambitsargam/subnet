@@ -66,7 +66,7 @@ async def forward(self):
 
     # TODO(developer): Define how the validator scores responses.
     # Adjust the scores based on responses from miners.
-    rewards = get_rewards(label=vulnerable, expected_response=expected_response, responses=responses)
+    rewards = get_rewards(expected_response=expected_response, responses=responses)
 
     # bt.logging.info(f"Scored responses: {rewards}")
     # Update the scores based on the rewards. You may want to define your own update_scores function for custom behavior.
