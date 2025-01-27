@@ -49,6 +49,10 @@ async def forward(self):
     # get_random_uids is an example method, but you can replace it with your own.
     miner_uids = get_random_uids(self, k=self.config.neuron.sample_size)
 
+    if len(miner_uids) == 0:
+        bt.logging.warning(f"❌❌❌❌❌ No miners found, skipping challenge")
+        return
+
     vulnerable = random.random() < 0.5
     challenge, expected_response = create_challenge(vulnerable=vulnerable)
     bt.logging.info(f"created challenge")
