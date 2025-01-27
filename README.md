@@ -10,6 +10,12 @@ This repository contains all the necessary information to get started, understan
 
 Bitsec is an Ecosystem for AI-powered code vulnerability detection. Initially it will help other Bittensor Subnet owners find and fix flaws in their incentive mechanisms, and find exploits in smart contract code. As the project grows, Bitsec will expand coverage to other types of codebases.
 
+## Subnet Incentive Mechanism Reports
+
+Since testnet, we have been evaluating subnet incentive mechanisms with critical, high, medium findings in mainnet.
+
+These will be run regularly and summaries posted on X, with detailed findings on our website.
+
 ## Applications
 
 The subnet incentivizes miners to develop models and workflows to find and fix code vulnerabilities. Applications allow paying users access to Bitsec's network of miners.
