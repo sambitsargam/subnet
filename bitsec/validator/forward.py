@@ -46,8 +46,13 @@ async def forward(self):
         self (:obj:`bittensor.neuron.Neuron`): The neuron object which contains all the necessary state for the validator.
 
     """
+    # Initialize seen_miners set if it doesn't exist
+    if not hasattr(self, 'seen_miners'):
+        self.seen_miners = set()
+
     # get_random_uids is an example method, but you can replace it with your own.
     miner_uids = get_random_uids(self, k=self.config.neuron.sample_size)
+    bt.logging.info(f"Attempting to connect to {self.config.neuron.sample_size} miners, UIDs found: {miner_uids}")
 
     if len(miner_uids) == 0:
         bt.logging.warning(f"❌❌❌❌❌ No miners found, skipping challenge")
@@ -58,17 +63,31 @@ async def forward(self):
     bt.logging.info(f"created challenge")
 
     # The dendrite client queries the network.
+    axons = [self.metagraph.axons[uid] for uid in miner_uids]
+    bt.logging.info(f"⏳ Connecting to miner axons at: {[axon.ip + ':' + str(axon.port) for axon in axons]}")
+    
     responses = await self.dendrite(
         # Send the query to selected miner axons in the network.
-        axons=[self.metagraph.axons[uid] for uid in miner_uids],
+        axons=axons,
         synapse=prepare_code_synapse(code=challenge),
         deserialize=True,
     )
 
     # Log the results for monitoring purposes.
-    bt.logging.info(f"Received responses: {responses}")
+    bt.logging.info(f"Received {len(responses)} responses, {len([response for response in responses if hasattr(response, 'dendrite')])} successful")
+    if len([response for response in responses if hasattr(response, 'dendrite')]) > 0:
+        for uid, response in zip(miner_uids, responses):
+            if hasattr(response, 'dendrite'):
+                # Check if this is the first time we've seen this miner
+                if uid not in self.seen_miners:
+                    bt.logging.info(f"🎉 First connection from Miner {uid}! Welcome to the network!")
+                    self.seen_miners.add(uid)
+                bt.logging.info(f"✅ Miner {uid} responded {response.dendrite.status_code}: {response.dendrite.status_message}")
+            else:
+                bt.logging.warning(f"❌ Miner {uid} failed to respond")
+    else:
+        bt.logging.warning(f"❌❌ No miners responded")
 
-    # TODO(developer): Define how the validator scores responses.
     # Adjust the scores based on responses from miners.
     rewards = get_rewards(expected_response=expected_response, responses=responses)
 
