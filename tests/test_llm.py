@@ -3,6 +3,7 @@ import pytest
 import os
 from flaky import flaky
 from unittest.mock import patch, MagicMock
+from bitsec.base.vulnerability_category import VulnerabilityCategory
 from bitsec.utils.llm import chat_completion
 from bitsec.protocol import PredictionResponse, Vulnerability, LineRange
 import openai
@@ -43,9 +44,9 @@ def test_chat_completion_with_format(mock_openai_response):
     expected_response = PredictionResponse.from_tuple([
         True,
         [Vulnerability(
+            category=VulnerabilityCategory.REENTRANCY,
             line_ranges=[LineRange(start=2, end=5)],
-            short_description="Test Vulnerability",
-            detailed_description="Test Reason"
+            description="Test Reason"
         )]
     ])
     mock_openai_response.choices[0].message.parsed = expected_response
