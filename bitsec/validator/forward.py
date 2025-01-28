@@ -74,19 +74,7 @@ async def forward(self):
     )
 
     # Log the results for monitoring purposes.
-    bt.logging.info(f"Received {len(responses)} responses, {len([response for response in responses if hasattr(response, 'dendrite')])} successful")
-    if len([response for response in responses if hasattr(response, 'dendrite')]) > 0:
-        for uid, response in zip(miner_uids, responses):
-            if hasattr(response, 'dendrite'):
-                # Check if this is the first time we've seen this miner
-                if uid not in self.seen_miners:
-                    bt.logging.info(f"🎉 First connection from Miner {uid}! Welcome to the network!")
-                    self.seen_miners.add(uid)
-                bt.logging.info(f"✅ Miner {uid} responded {response.dendrite.status_code}: {response.dendrite.status_message}")
-            else:
-                bt.logging.warning(f"❌ Miner {uid} failed to respond")
-    else:
-        bt.logging.warning(f"❌❌ No miners responded")
+    bt.logging.info(f"Received {len(responses)} responses")
 
     # Adjust the scores based on responses from miners.
     rewards = get_rewards(expected_response=expected_response, responses=responses)
