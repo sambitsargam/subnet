@@ -14,15 +14,8 @@ btcli wallet list
 
 # Send tokens to all the wallets
 
-1. Copy the miner's ss58 address.
-2. Go to
-   https://polkadot.js.org/apps/?rpc=wss%3A%2F%2Ftest.finney.opentensor.ai%3A443#/accounts
-3. Click the send button next to any account e.g. Alice
-4. Paste the ss58 address in the "Send to address" box
-5. Set amount to 100
-6. Click the "Make Transfer" button
-
-Repeat for all wallets, hot and cold.
+Go to Bittensor Discord, and submit a Request for Testnet TAO
+Send TAO to your tokens.
 
 # Register to subnet
 
@@ -41,6 +34,8 @@ For MAINNET 60:
 btcli subnet register --wallet.name miner --netuid 60 --wallet.hotkey default --subtensor.chain_endpoint test
 btcli subnet register --wallet.name validator --netuid 60 --wallet.hotkey default --subtensor.chain_endpoint test
 ```
+
+You also need to change `start-validator.sh` and `start-miner.sh` with your mainnet settings and use `--netuid 60`.
 
 If installs are failing, try the following:
 
