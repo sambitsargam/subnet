@@ -21,6 +21,7 @@ import json
 import bittensor as bt
 import pydantic
 from typing import List, Tuple, Union
+from bitsec.base.vulnerability_category import VulnerabilityCategory
 
 def prepare_code_synapse(code: str):
     """
@@ -32,7 +33,8 @@ def prepare_code_synapse(code: str):
     Returns:
         CodeSynapse: An instance of CodeSynapse containing the encoded code and a default prediction value.
     """
-    return CodeSynapse(code=code)
+    vulnerability_categories = VulnerabilityCategory.list()
+    return CodeSynapse(code=code, acceptable_vulnerability_categories=vulnerability_categories)
 
 # This is the protocol for the dummy miner and validator.
 # It is a simple request-response protocol where the validator sends a request
@@ -78,10 +80,10 @@ class Vulnerability(pydantic.BaseModel):
     line_ranges: List[LineRange] = pydantic.Field(
         description="An array of lines of code ranges where the vulnerability is located. Optional, but strongly recommended. Consecutive lines should be a single range, eg lines 1-3 should NOT be [{start: 1, end: 1}, {start: 2, end: 2}, {start: 3, end: 3}] INSTEAD SHOULD BE [{start: 1, end: 3}].",
     )
-    short_description: str = pydantic.Field(
-        description="High level summary of vulnerability, succint answers favored."
+    category: VulnerabilityCategory = pydantic.Field(
+        description="The category of vulnerability detected."
     )
-    detailed_description: str = pydantic.Field(
+    description: str = pydantic.Field(
         description="Detailed description of the vulnerability, including why it could lead to financial loss."
     )
     
@@ -155,6 +157,10 @@ class CodeSynapse(bt.Synapse):
 
     # Required request input, filled by sending dendrite caller.
     code: str
+
+    acceptable_vulnerability_categories: List[VulnerabilityCategory] = pydantic.Field(
+        description="List of acceptable vulnerability categories, if empty then any categories are acceptable"
+    )
 
     # Optional request output, filled by receiving axon.
     response: PredictionResponse = pydantic.Field(
