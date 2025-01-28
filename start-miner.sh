@@ -5,9 +5,13 @@ PID_FILE="miner.pid"
 # Kill previous instance if running
 if [ -f "$PID_FILE" ]; then
     OLD_PID=$(cat "$PID_FILE")
-    kill $OLD_PID 2>/dev/null || true
+    kill -9 $OLD_PID
+    sleep 1
     rm "$PID_FILE"
 fi
+
+
+
 
 # Start miner and save PID
 python -m neurons.miner --netuid 209 --subtensor.chain_endpoint test \
