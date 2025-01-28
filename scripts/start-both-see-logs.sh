@@ -2,10 +2,10 @@
 
 # Start the processes
 # ./start-validator.sh > validator.log 2>&1 & 
-./start-validator.sh & 
+./../start-validator.sh & 
 PID1=$!
 # ./start-miner.sh > miner.log 2>&1 &
-./start-miner.sh &
+./../start-miner.sh &
 PID2=$!
 
 # Set up trap to kill processes when user presses Ctrl+C
