@@ -192,7 +192,7 @@ def check_for_updates():
         logging.info("✅ Code is up to date.")
         return
     
-    logging.info("🔄 Pulling new code...")
+    logging.info(f"🔄 Pulling new code... ({local_commit} -> {remote_commit})")
 
     # 4. Check if we need to stash
     stash_created = False
