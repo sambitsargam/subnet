@@ -261,34 +261,34 @@ def setup_shutdown_handler():
 def main():
     setup_shutdown_handler()
 
-    scheduler = BlockingScheduler()
-
-    # 1) Check for Git updates every 5 minutes
-    scheduler.add_job(
-        check_for_updates,
-        'interval',
-        minutes=CHECK_FOR_UPDATES_INTERVAL,
-        id='check_for_updates_job'
-    )
-
-    # 2) Ensure the validator is alive every 1 minute
-    scheduler.add_job(
-        ensure_validator_is_running,
-        'interval',
-        minutes=CHECK_PROCESS_ALIVE_INTERVAL,
-        id='ensure_validator_running_job'
-    )
-
     # Just to be safe
     stop_validator()
 
-    # This needs to run before scheduler.start(), otherwise it will start the validator without checking
-    check_for_updates()
-
-    # Do not need to start validator here, it will start with scheduler.start()
-    # start_validator()
+    try:
+        check_for_updates()
+    except Exception as e:
+        logging.error(f"Failed initial updates check: {e}")
 
     try:
+        scheduler = BlockingScheduler()
+
+        # 1) Check for Git updates every 5 minutes
+        scheduler.add_job(
+            check_for_updates,
+            'interval',
+            minutes=CHECK_FOR_UPDATES_INTERVAL,
+            id='check_for_updates_job'
+        )
+
+        # 2) Ensure the validator is alive every 1 minute
+        scheduler.add_job(
+            ensure_validator_is_running,
+            'interval',
+            minutes=CHECK_PROCESS_ALIVE_INTERVAL,
+            next_run_time=datetime.now(), # Run immediately
+            id='ensure_validator_running_job'
+        )
+
         scheduler.start()
     except (KeyboardInterrupt, SystemExit):
         logging.info("Scheduler shutting down...")
