@@ -69,9 +69,10 @@ def start_validator():
     logging.info("Starting validator...")
     
     # Construct the command, including the netuid if not testnet
-    cmd = f"bash -c '{START_SCRIPT}'"
+    cmd = f"bash -c '{START_SCRIPT}"
     if not use_testnet:
         cmd += f" --netuid {MAINNET_NETUID}"
+    cmd += "'" # close quote started after `bash -c`
 
     process = subprocess.Popen(
         cmd,
