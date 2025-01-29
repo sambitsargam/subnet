@@ -12,24 +12,19 @@ from datetime import datetime
 from git import Repo, GitCommandError
 from apscheduler.schedulers.blocking import BlockingScheduler
 
-##########################################
-# Configuration
-##########################################
-REPO_PATH = Path(".")   # Current directory where the script is running
+############## Configuration ##############
 BRANCH_NAME = "mainnet"
-START_SCRIPT = "./scripts/start-validator-once.sh"
-PID_FILE = REPO_PATH / "validator.pid"
 MAINNET_NETUID = 60
 
-# How often we check for updates (in minutes)
-CHECK_FOR_UPDATES_INTERVAL = 10
+# How often we... (in minutes)
+INTERVAL_UPDATE_CODE = 10
+INTERVAL_PROCESS_ALIVE = 1
 
-# How often we check the validator process is still running (in minutes)
-CHECK_PROCESS_ALIVE_INTERVAL = 1
+# Paths
+WORKING_DIRECTORY = Path(".")   # Current directory
+START_SCRIPT = WORKING_DIRECTORY / "scripts/start-validator-once.sh"
+PID_FILE = WORKING_DIRECTORY / "validator.pid"
 
-##########################################
-# Logging
-##########################################
 # Set up logging so that it goes to the console (stdout)
 logging.basicConfig(
     level=logging.INFO,
@@ -72,7 +67,7 @@ def start_validator():
 
     process = subprocess.Popen(
         cmd,
-        cwd=REPO_PATH,
+        cwd=WORKING_DIRECTORY,
         shell=True,
         executable='/bin/bash',
         # Ensure output is properly forwarded
@@ -157,7 +152,7 @@ def check_for_updates():
     """
     logging.info("Checking for updates...")
 
-    repo = Repo(str(REPO_PATH))
+    repo = Repo(str(WORKING_DIRECTORY))
     git_cmd = repo.git
 
     # 1. Fetch
@@ -279,19 +274,19 @@ def main():
     try:
         scheduler = BlockingScheduler()
 
-        # 1) Check for Git updates every 5 minutes
+        # 1) Check for Git updates
         scheduler.add_job(
             check_for_updates,
             'interval',
-            minutes=CHECK_FOR_UPDATES_INTERVAL,
+            minutes=INTERVAL_UPDATE_CODE,
             id='check_for_updates_job'
         )
 
-        # 2) Ensure the validator is alive every 1 minute
+        # 2) Ensure the validator is alive
         scheduler.add_job(
             ensure_validator_is_running,
             'interval',
-            minutes=CHECK_PROCESS_ALIVE_INTERVAL,
+            minutes=INTERVAL_PROCESS_ALIVE,
             next_run_time=datetime.now(), # Run immediately
             id='ensure_validator_running_job'
         )
