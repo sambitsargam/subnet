@@ -250,8 +250,6 @@ def ensure_validator_is_running():
     if not is_process_alive():
         logging.warning("Validator is not running. Starting it now...")
         start_validator()
-    else:
-        logging.info("Validator is still running.")
 
 def setup_shutdown_handler():
     """Setup signal handlers to ensure proper shutdown."""
