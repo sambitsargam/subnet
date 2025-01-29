@@ -160,6 +160,16 @@ def check_for_updates():
         logging.error(f"Failed to fetch changes: {e}")
         return
 
+    # Check for detached HEAD state and reset
+    if repo.head.is_detached:
+        logging.warning("HEAD is detached. Resetting to branch head...")
+        try:
+            git_cmd.reset('--hard', f'origin/{BRANCH_NAME}')
+            git_cmd.checkout(BRANCH_NAME)
+        except GitCommandError as e:
+            logging.error(f"Failed to reset and checkout branch '{BRANCH_NAME}': {e}")
+            return
+
     # 2. Compare local vs. remote commits
     try:
         local_commit = repo.head.commit.hexsha
@@ -208,10 +218,10 @@ def check_for_updates():
         logging.error(f"Failed to pull: {e}")
         # Roll back to old commit if needed
         logging.info("Reverting to previous commit...")
-        git_cmd.checkout(local_commit)
-        if stash_created:
-            git_cmd.stash('pop')
-        return
+        try:
+            git_cmd.checkout(local_commit)
+        except GitCommandError as e:
+            logging.error(f"Failed to checkout previous commit: {e}")
 
     # Pop stash if we created one
     if stash_created:
