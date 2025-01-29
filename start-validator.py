@@ -189,7 +189,7 @@ def check_for_updates():
 
     # 3. If no difference, return early
     if local_commit == remote_commit:
-        logging.info("✅ Code is up to date.")
+        logging.info(f"✅ Code is up to date. ({local_commit})")
         return
     
     logging.info(f"🔄 Pulling new code... ({local_commit} -> {remote_commit})")
