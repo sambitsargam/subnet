@@ -16,8 +16,9 @@ from apscheduler.schedulers.blocking import BlockingScheduler
 ##########################################
 REPO_PATH = Path(".")   # Current directory where the script is running
 BRANCH_NAME = "mainnet"
-START_SCRIPT = "./start-validator.sh"
+START_SCRIPT = "./scripts/start-validator-once.sh"
 PID_FILE = REPO_PATH / "validator.pid"
+MAINNET_NETUID = 60
 
 # How often we check for updates (in minutes)
 CHECK_FOR_UPDATES_INTERVAL = 10
@@ -63,7 +64,7 @@ def start_validator():
     logging.info("Starting validator...")
     
     # Use bash -c to properly execute the shell script with environment
-    cmd = f"bash -c '{START_SCRIPT}'"
+    cmd = f"bash -c '{START_SCRIPT} --netuid {MAINNET_NETUID}'"
 
     process = subprocess.Popen(
         cmd,
@@ -187,7 +188,9 @@ def check_for_updates():
 
     # Switch branch (just to be sure), then pull
     try:
-        git_cmd.checkout(BRANCH_NAME)
+        # Unless local branch is g/validator-auto-update, switch to BRANCH_NAME
+        if repo.active_branch.name != "g/validator-auto-update":
+            git_cmd.checkout(BRANCH_NAME)
     except GitCommandError as e:
         message = f"❌ Failed to checkout branch '{BRANCH_NAME}': {e}.\n\n"
         message += "⚠️ ⚠️ ⚠️ ⚠️ ⚠️ ⚠️ ⚠️ ⚠️ ⚠️ ⚠️ ⚠️ ⚠️ ⚠️ ⚠️ ⚠️\n"
@@ -266,14 +269,14 @@ def main():
         id='ensure_validator_running_job'
     )
 
-    logging.info("Starting APScheduler for auto-updates and validator checks...")
-
+    # Just to be safe
     stop_validator()
 
-    logging.info("Running initial update check before starting validator...")
+    # This needs to run before scheduler.start(), otherwise it will start the validator without checking
     check_for_updates()
 
-    start_validator()
+    # Do not need to start validator here, it will start with scheduler.start()
+    # start_validator()
 
     try:
         scheduler.start()
