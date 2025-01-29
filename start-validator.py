@@ -43,12 +43,12 @@ logging.getLogger('apscheduler').setLevel(logging.WARNING)
 ##########################################
 # Helper Functions
 ##########################################
-def is_process_alive(pid_file: Path) -> bool:
-    """Check if the PID in pid_file corresponds to a running process."""
-    if not pid_file.is_file():
+def is_process_alive() -> bool:
+    """Check if the PID in PID_FILE corresponds to a running process."""
+    if not PID_FILE.is_file():
         return False
     try:
-        pid = int(pid_file.read_text().strip())
+        pid = int(PID_FILE.read_text().strip())
     except ValueError:
         return False
 
@@ -61,6 +61,9 @@ def is_process_alive(pid_file: Path) -> bool:
 
 def start_validator():
     """Start the validator. Output goes to the same screen as this script."""
+    if is_process_alive():
+        return
+    
     logging.info("Starting validator...")
     
     # Use bash -c to properly execute the shell script with environment
@@ -237,7 +240,7 @@ def check_for_updates():
 
 def ensure_validator_is_running():
     """Checks if the validator is alive. If not, starts it."""
-    if not is_process_alive(PID_FILE):
+    if not is_process_alive():
         logging.warning("Validator is not running. Starting it now...")
         start_validator()
     else:
