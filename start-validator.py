@@ -2,13 +2,13 @@
 
 import os
 import sys
-import signal
-import subprocess
-import logging
-from pathlib import Path
 import time
+import signal
+import logging
+import argparse
+import subprocess
+from pathlib import Path
 from datetime import datetime
-
 from git import Repo, GitCommandError
 from apscheduler.schedulers.blocking import BlockingScheduler
 
@@ -25,6 +25,8 @@ WORKING_DIRECTORY = Path(".")   # Current directory
 START_SCRIPT = WORKING_DIRECTORY / "scripts/start-validator-once.sh"
 PID_FILE = WORKING_DIRECTORY / "validator.pid"
 
+
+############## Logging ##############
 # Set up logging so that it goes to the console (stdout)
 logging.basicConfig(
     level=logging.INFO,
@@ -36,9 +38,8 @@ logging.basicConfig(
 # Suppress APScheduler info messages
 logging.getLogger('apscheduler').setLevel(logging.WARNING)
 
-##########################################
-# Helper Functions
-##########################################
+
+############## Worker Functions ##############
 def is_process_alive() -> bool:
     """Check if the PID in PID_FILE corresponds to a running process."""
     if not PID_FILE.is_file():
@@ -106,7 +107,6 @@ def stop_validator():
         # Try to kill for up to 30 seconds
         start_time = time.time()
         killed = False
-        
         while time.time() - start_time < 30:
             try:
                 if time.time() - start_time < 10:   
@@ -194,9 +194,9 @@ def check_for_updates():
             stash_result = git_cmd.stash('push', '-u', '-m', 'auto-update-stash')
             if "No local changes to save" not in stash_result:
                 stash_created = True
-                logging.info("🔖 Local changes stashed successfully.")
+                logging.info("🔖 Local changes saved.")
         except GitCommandError as e:
-            logging.warning(f"🔖 Stash failed: {e}")
+            logging.warning(f"❌ Error saving local changes: {e}")
 
     # Switch branch (just to be sure), then pull
     try:
@@ -214,8 +214,8 @@ def check_for_updates():
         return
 
     try:
-        repo.remotes.origin.pull(BRANCH_NAME)
-        logging.info("Pull successful.")
+        repo.remotes.origin.pull()
+        logging.info("✅ Code updated successfully.")
     except GitCommandError as e:
         logging.error(f"Failed to pull: {e}")
         # Roll back to old commit if needed
@@ -229,9 +229,11 @@ def check_for_updates():
     if stash_created:
         try:
             git_cmd.stash('pop')
-            logging.info("Stash popped successfully.")
+            logging.info("🔖 Local changes restored.")
         except GitCommandError as e:
-            logging.warning(f"Stash pop conflict or issue: {e}")
+            logging.warning("❌❌❌❌❌❌❌❌❌❌❌❌❌❌❌❌❌\n" +
+                           f"Conflict restoring local changes: {e}\n" +
+                           "❌❌❌❌❌❌❌❌❌❌❌❌❌❌❌❌❌")
 
     # 5. Stop validator & restart with new code
     stop_validator()
@@ -257,15 +259,14 @@ def setup_shutdown_handler():
     signal.signal(signal.SIGTERM, shutdown_handler)
     signal.signal(signal.SIGINT, shutdown_handler)
 
-##########################################
-# Main: Setup the Scheduler
-##########################################
+############## Main: Setup the Scheduler ##############
 def main():
     setup_shutdown_handler()
 
     # Just to be safe
     stop_validator()
 
+    # Check for updates before starting the scheduler and validator
     try:
         check_for_updates()
     except Exception as e:
