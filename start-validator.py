@@ -25,6 +25,9 @@ WORKING_DIRECTORY = Path(".")   # Current directory
 START_SCRIPT = WORKING_DIRECTORY / "scripts/start-validator-once.sh"
 PID_FILE = WORKING_DIRECTORY / "validator.pid"
 
+############## Globals ##############
+use_testnet = False
+stay_on_branch = False
 
 ############## Logging ##############
 # Set up logging so that it goes to the console (stdout)
@@ -58,13 +61,17 @@ def is_process_alive() -> bool:
 
 def start_validator():
     """Start the validator. Output goes to the same screen as this script."""
+    global use_testnet
+    
     if is_process_alive():
         return
     
     logging.info("Starting validator...")
     
-    # Use bash -c to properly execute the shell script with environment
-    cmd = f"bash -c '{START_SCRIPT} --netuid {MAINNET_NETUID}'"
+    # Construct the command, including the netuid if not testnet
+    cmd = f"bash -c '{START_SCRIPT}'"
+    if not use_testnet:
+        cmd += f" --netuid {MAINNET_NETUID}"
 
     process = subprocess.Popen(
         cmd,
@@ -200,8 +207,7 @@ def check_for_updates():
 
     # Switch branch (just to be sure), then pull
     try:
-        # Unless local branch is g/validator-auto-update, switch to BRANCH_NAME
-        if repo.active_branch.name != "g/validator-auto-update":
+        if not stay_on_branch:
             git_cmd.checkout(BRANCH_NAME)
     except GitCommandError as e:
         message = f"❌ Failed to checkout branch '{BRANCH_NAME}': {e}.\n\n"
@@ -259,8 +265,30 @@ def setup_shutdown_handler():
     signal.signal(signal.SIGTERM, shutdown_handler)
     signal.signal(signal.SIGINT, shutdown_handler)
 
+############## Argument Parsing ##############
+def parse_arguments() -> argparse.Namespace:
+    """Parse command-line arguments."""
+    parser = argparse.ArgumentParser(description="Start and manage the validator process.")
+    parser.add_argument(
+        '--testnet',
+        action='store_true',
+        help='Use testnet instead of mainnet.'
+    )
+    parser.add_argument(
+        '--stay-on-branch',
+        action='store_true',
+        help='Stay on the current branch instead of switching to BRANCH_NAME.'
+    )
+    return parser.parse_args()
+
 ############## Main: Setup the Scheduler ##############
 def main():
+    global use_testnet, stay_on_branch
+    args = parse_arguments()
+
+    use_testnet = True if args.testnet else False
+    stay_on_branch = True if args.stay_on_branch else False
+
     setup_shutdown_handler()
 
     # Just to be safe
