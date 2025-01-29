@@ -112,12 +112,12 @@ def stop_validator():
         pid = int(PID_FILE.read_text().strip())
         logging.info(f"Stopping validator process group with PID={pid}")
         
-        # Try to kill for up to 30 seconds
+        # Repeat try to kill for a time
         start_time = time.time()
         killed = False
-        while time.time() - start_time < 30:
+        while time.time() - start_time < 10:
             try:
-                if time.time() - start_time < 10:   
+                if time.time() - start_time < 4:
                     logging.info("Calling soft quit (SIGTERM)...")
                     os.killpg(os.getpgid(pid), signal.SIGTERM)
                 else:
