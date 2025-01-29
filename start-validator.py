@@ -7,6 +7,7 @@ import subprocess
 import logging
 from pathlib import Path
 import time
+from datetime import datetime
 
 from git import Repo, GitCommandError
 from apscheduler.schedulers.blocking import BlockingScheduler
@@ -113,20 +114,19 @@ def stop_validator():
         
         while time.time() - start_time < 30:
             try:
-                # First try SIGTERM
-                os.killpg(os.getpgid(pid), signal.SIGTERM)
+                if time.time() - start_time < 10:   
+                    logging.info("Calling soft quit (SIGTERM)...")
+                    os.killpg(os.getpgid(pid), signal.SIGTERM)
+                else:
+                    logging.info("Calling hard quit (-9, SIGKILL)...")
+                    os.killpg(os.getpgid(pid), signal.SIGKILL)
+
                 time.sleep(1)
-                
-                # If still alive, use SIGKILL
-                os.killpg(os.getpgid(pid), signal.SIGKILL)
-                time.sleep(1)
-                
+         
                 # Check if process exists
                 os.kill(pid, 0)
-                logging.info("Process still alive, retrying kill...")
             except ProcessLookupError:
                 killed = True
-                logging.info("Process successfully killed")
                 break
             except OSError:
                 killed = True
