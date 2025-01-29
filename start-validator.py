@@ -197,6 +197,16 @@ def check_for_updates():
     
     logging.info(f"🔄 Pulling new code... ({local_commit} -> {remote_commit})")
 
+    # Log how long ago the newest commit was committed
+    try:
+        commit_time = repo.head.commit.committed_datetime
+        time_since_commit = datetime.now() - commit_time
+        # Calculate the total time difference in seconds
+        total_seconds = time_since_commit.total_seconds()
+        logging.info(f"New version of code was released {total_seconds:.0f} seconds ago.")
+    except Exception as e:
+        pass
+
     # 4. Check if we need to stash
     stash_created = False
     if repo.is_dirty(untracked_files=True):
