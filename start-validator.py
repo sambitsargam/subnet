@@ -126,7 +126,9 @@ def stop_validator():
                 time.sleep(1)
          
                 # Check if process exists
-                os.kill(pid, 0)
+                if not is_process_alive():
+                    killed = True
+                    break
             except ProcessLookupError:
                 killed = True
                 break
@@ -320,7 +322,7 @@ def main():
 
         scheduler.start()
     except (KeyboardInterrupt, SystemExit):
-        logging.info("Scheduler shutting down...")
+        logging.info("Scheduler shutting down. Goodbye.")
 
 if __name__ == "__main__":
     main()
