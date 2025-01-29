@@ -135,7 +135,11 @@ def stop_validator():
             time.sleep(1)
         
         if not killed:
-            logging.error(f"Failed to kill process {pid} after 30 seconds. Try manually killing with 'kill -9 {pid}' or 'pkill -9 -f start-validator.sh. If that doesn't work, try restarting your machine.")
+            logging.error(f"😒😒😒😒😒😒\n" +
+                        f"\tFailed to exit validator pid {pid}, after 30 seconds.\n" +
+                        f"\tCheck if still running by calling `kill -0 {pid}` -- if you get 'No such process' then you're good.\n" +
+                        f"\tOtherwise, you should manually quit by calling `kill -9 {pid}`.\n" +
+                        f"\tIf that doesn't work, try restarting your machine.")
             
     except (ValueError, ProcessLookupError):
         pass
