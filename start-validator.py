@@ -172,22 +172,34 @@ def check_for_updates():
         logging.error(f"Failed to fetch changes: {e}")
         return
 
+    branch = BRANCH_NAME
+    # Detect the current branch if staying on the local branch
+    if stay_on_branch:
+        try:
+            repo = Repo(str(WORKING_DIRECTORY))
+            branch = repo.active_branch.name
+            logging.info(f"Staying on the current branch: {branch}")
+        except Exception as e:
+            logging.error(f"Failed to detect the current branch: {e}")
+
+
     # Check for detached HEAD state and reset
     if repo.head.is_detached:
         logging.warning("HEAD is detached. Resetting to branch head...")
         try:
-            git_cmd.reset('--hard', f'origin/{BRANCH_NAME}')
-            git_cmd.checkout(BRANCH_NAME)
+            git_cmd.reset('--hard', f'origin/{branch}')
+            git_cmd.checkout(branch)
         except GitCommandError as e:
-            logging.error(f"Failed to reset and checkout branch '{BRANCH_NAME}': {e}")
+            logging.error(f"Failed to reset and checkout branch '{branch}': {e}")
             return
 
     # 2. Compare local vs. remote commits
     try:
         local_commit = repo.head.commit.hexsha
-        remote_commit = repo.remotes.origin.refs[BRANCH_NAME].commit.hexsha
+        remote_commit = repo.remotes.origin.refs[branch].commit.hexsha
+        logging.info(f"remote branch: {branch}")
     except (AttributeError, IndexError) as e:
-        logging.error(f"Could not find branch '{BRANCH_NAME}' or commits: {e}")
+        logging.error(f"Could not find branch '{branch}' or commits: {e}")
         return
 
     # 3. If no difference, return early
@@ -221,11 +233,11 @@ def check_for_updates():
     # Switch branch (just to be sure), then pull
     try:
         if not stay_on_branch:
-            git_cmd.checkout(BRANCH_NAME)
+            git_cmd.checkout(branch)
     except GitCommandError as e:
-        message = f"❌ Failed to checkout branch '{BRANCH_NAME}': {e}.\n\n"
+        message = f"❌ Failed to checkout branch '{branch}': {e}.\n\n"
         message += "⚠️ ⚠️ ⚠️ ⚠️ ⚠️ ⚠️ ⚠️ ⚠️ ⚠️ ⚠️ ⚠️ ⚠️ ⚠️ ⚠️ ⚠️\n"
-        message += "Try manually updating by running 'git reset --hard HEAD && git clean -fd && git checkout {BRANCH_NAME} && git pull && python3 start-validator-autoupdate.py'.\n\n"
+        message += f"Try manually updating by running 'git reset --hard HEAD && git clean -fd && git checkout {branch} && git pull && python3 start-validator-autoupdate.py'.\n\n"
         message += "⚠️ ⚠️ ⚠️ ⚠️ ⚠️ ⚠️ ⚠️ ⚠️ ⚠️ ⚠️ ⚠️ ⚠️ ⚠️ ⚠️ ⚠️\n"
         logging.error(message)
         if stash_created:
