@@ -323,6 +323,12 @@ def main():
     except Exception as e:
         logging.error(f"Failed initial updates check: {e}")
 
+    # use start_validator() instead of adding job to scheduler.
+    # If we ran jobs immediately ensure_validator_is_running() 
+    # would warn that validator was not running, which would 
+    # be confusing! 
+    start_validator()
+
     try:
         scheduler = BlockingScheduler()
 
@@ -339,7 +345,6 @@ def main():
             ensure_validator_is_running,
             'interval',
             minutes=INTERVAL_PROCESS_ALIVE,
-            next_run_time=datetime.now(), # Run immediately
             id='ensure_validator_running_job'
         )
 
