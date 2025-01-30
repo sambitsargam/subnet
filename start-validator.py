@@ -44,7 +44,6 @@ logging.getLogger('apscheduler').setLevel(logging.WARNING)
 
 ############## Worker Functions ##############
 def is_process_alive() -> bool:
-    """Check if the PID in PID_FILE corresponds to a running process."""
     if not PID_FILE.is_file():
         return False
     try:
@@ -52,13 +51,20 @@ def is_process_alive() -> bool:
     except ValueError:
         return False
 
-    # kill(pid, 0) == "kill -0 <pid>" => check existence
+    # Alt check:
+    try:
+        if Path(f"/proc/{pid}").exists():
+            return True
+    except Exception:
+        pass
+    
+    # Standard check:
     try:
         os.kill(pid, 0)
-        return True  # No exception => process is alive
+        return True
     except OSError:
-        return False
-
+        return False # Process not found
+    
 def start_validator():
     """Start the validator. Output goes to the same screen as this script."""
     global use_testnet
