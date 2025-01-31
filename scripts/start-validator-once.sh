@@ -1,9 +1,10 @@
 #!/bin/bash
 NETUID=209 # Default to testnet
 
+echo "Starting validator in ./scripts/start-validator-once.sh..."
 
 # Kill previous instance if running
-PID_FILE="miner.pid"
+PID_FILE="../validator.pid"
 if [ -f "$PID_FILE" ]; then
     OLD_PID=$(cat "$PID_FILE")
     kill -9 $OLD_PID
@@ -11,9 +12,9 @@ if [ -f "$PID_FILE" ]; then
     rm "$PID_FILE"
 fi
 
-# Activate virtual environment
+echo "Activating virtual environment"
 source venv/bin/activate
-echo "Activated virtual environment"
+
 
 # Parse command-line arguments for netuid
 while [[ "$#" -gt 0 ]]; do
@@ -29,8 +30,9 @@ while [[ "$#" -gt 0 ]]; do
   esac
 done
 
-# Start miner and save PID
-python -m neurons.miner --netuid $NETUID --subtensor.chain_endpoint test \
-    --wallet.name miner --wallet.hotkey default \
-    --axon.port 8092 --axon.external_port 8092 \
+
+echo "Starting validator with netuid $NETUID"
+python -m neurons.validator --netuid $NETUID --subtensor.chain_endpoint test \
+    --wallet.name validator --wallet.hotkey default \
+    --axon.port 8091 --axon.external_port 8091 \
     --logging.debug
