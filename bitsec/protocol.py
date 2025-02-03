@@ -86,6 +86,15 @@ class Vulnerability(pydantic.BaseModel):
     description: str = pydantic.Field(
         description="Detailed description of the vulnerability, including why it could lead to financial loss."
     )
+    vulnerable_code: str = pydantic.Field(
+        description="Code snippet that contains the vulnerability"
+    )
+    code_to_exploit: str = pydantic.Field(
+        description="Code snippet that exploits the vulnerability."
+    )
+    rewritten_code_to_fix_vulnerability: str = pydantic.Field(
+        description="Code snippet that prevents the vulnerability from being exploited."
+    )
     
     model_config = { "populate_by_name": True }
 
