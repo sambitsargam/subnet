@@ -22,18 +22,22 @@ def mock_prediction_response():
             Vulnerability(
                 category=VulnerabilityCategory.ARITHMETIC_OVERFLOW_AND_UNDERFLOW,
                 line_ranges=[LineRange(start=1, end=9)],
-                description="Can lead to loss of funds"
+                description="Can lead to loss of funds",
+                vulnerable_code="",
+                code_to_exploit="",
+                rewritten_code_to_fix_vulnerability=""
             )
         ]
     )
 
 
-vuln1 = Vulnerability(category=VulnerabilityCategory.ARITHMETIC_OVERFLOW_AND_UNDERFLOW, line_ranges=[LineRange(start=1, end=9)], description="Can lead to loss of funds")
-vuln2 = Vulnerability(category=VulnerabilityCategory.WEAK_ACCESS_CONTROL, line_ranges=[LineRange(start=10, end=20)], description="Allows unauthorized access to sensitive data")
-vuln3 = Vulnerability(category=VulnerabilityCategory.REENTRANCY, line_ranges=[LineRange(start=21, end=30)], description="Can lead to loss of funds")
-vuln4 = Vulnerability(category=VulnerabilityCategory.INCORRECT_CALCULATION, line_ranges=[LineRange(start=30, end=40)], description="Allows unauthorized access to terminate the contract")
-vuln5 = Vulnerability(category=VulnerabilityCategory.BAD_RANDOMNESS, line_ranges=[LineRange(start=30, end=40)], description="Allows unauthorized access to terminate the contract")
-vuln6 = Vulnerability(category=VulnerabilityCategory.FRONT_RUNNING, line_ranges=[LineRange(start=30, end=40)], description="Allows unauthorized access to terminate the contract")
+vuln1 = Vulnerability(category=VulnerabilityCategory.ARITHMETIC_OVERFLOW_AND_UNDERFLOW, line_ranges=[LineRange(start=1, end=9)], description="Can lead to loss of funds", vulnerable_code="", code_to_exploit="", rewritten_code_to_fix_vulnerability="")
+vuln2 = Vulnerability(category=VulnerabilityCategory.WEAK_ACCESS_CONTROL, line_ranges=[LineRange(start=10, end=20)], description="Allows unauthorized access to sensitive data", vulnerable_code="", code_to_exploit="", rewritten_code_to_fix_vulnerability="")
+vuln3 = Vulnerability(category=VulnerabilityCategory.REENTRANCY, line_ranges=[LineRange(start=21, end=30)], description="Can lead to loss of funds", vulnerable_code="", code_to_exploit="", rewritten_code_to_fix_vulnerability="")
+vuln4 = Vulnerability(category=VulnerabilityCategory.INCORRECT_CALCULATION, line_ranges=[LineRange(start=30, end=40)], description="Allows unauthorized access to terminate the contract", vulnerable_code="", code_to_exploit="", rewritten_code_to_fix_vulnerability="")
+vuln5 = Vulnerability(category=VulnerabilityCategory.BAD_RANDOMNESS, line_ranges=[LineRange(start=30, end=40)], description="Allows unauthorized access to terminate the contract", vulnerable_code="", code_to_exploit="", rewritten_code_to_fix_vulnerability="")
+vuln6 = Vulnerability(category=VulnerabilityCategory.FRONT_RUNNING, line_ranges=[LineRange(start=30, end=40)], description="Allows unauthorized access to terminate the contract", vulnerable_code="", code_to_exploit="", rewritten_code_to_fix_vulnerability="")
+
 def test_mock_reward_perfect_score(mock_prediction_response):
     result = reward(mock_prediction_response, mock_prediction_response)
     assert result == 1.0
@@ -170,7 +174,10 @@ def test_jaccard_score_different_descriptions_same_category():
     vuln1_different_desc = Vulnerability(
         category=VulnerabilityCategory.ARITHMETIC_OVERFLOW_AND_UNDERFLOW,
         line_ranges=[LineRange(start=1, end=9)],
-        description="Different description"
+        description="Different description",
+        vulnerable_code="",
+        code_to_exploit="",
+        rewritten_code_to_fix_vulnerability=""
     )
     expected_response = PredictionResponse(prediction=True, vulnerabilities=[vuln1])
     response = PredictionResponse(prediction=True, vulnerabilities=[vuln1_different_desc])
@@ -181,7 +188,10 @@ def test_jaccard_score_different_line_ranges_same_category():
     vuln1_different_lines = Vulnerability(
         category=VulnerabilityCategory.ARITHMETIC_OVERFLOW_AND_UNDERFLOW,
         line_ranges=[LineRange(start=100, end=200)],
-        description="Can lead to loss of funds"
+        description="Can lead to loss of funds",
+        vulnerable_code="",
+        code_to_exploit="",
+        rewritten_code_to_fix_vulnerability=""
     )
     expected_response = PredictionResponse(prediction=True, vulnerabilities=[vuln1])
     response = PredictionResponse(prediction=True, vulnerabilities=[vuln1_different_lines])
