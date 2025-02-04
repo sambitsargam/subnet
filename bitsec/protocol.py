@@ -20,7 +20,7 @@
 import json
 import bittensor as bt
 import pydantic
-from typing import List, Tuple, Union
+from typing import List, Optional, Tuple, Union
 from bitsec.base.vulnerability_category import VulnerabilityCategory
 
 def prepare_code_synapse(code: str):
@@ -77,8 +77,9 @@ class LineRange(pydantic.BaseModel):
 
 class Vulnerability(pydantic.BaseModel):
     """Represents a security vulnerability found in code."""
-    line_ranges: List[LineRange] = pydantic.Field(
+    line_ranges: Optional[List[LineRange]] = pydantic.Field(
         description="An array of lines of code ranges where the vulnerability is located. Optional, but strongly recommended. Consecutive lines should be a single range, eg lines 1-3 should NOT be [{start: 1, end: 1}, {start: 2, end: 2}, {start: 3, end: 3}] INSTEAD SHOULD BE [{start: 1, end: 3}].",
+        default=None
     )
     category: VulnerabilityCategory = pydantic.Field(
         description="The category of vulnerability detected."
