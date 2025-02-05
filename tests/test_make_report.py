@@ -1,4 +1,7 @@
-import json
+####### To see the report output, run:
+####### pytest -v -s tests/test_make_report.py
+########################################################
+
 import os
 import pytest
 from flaky import flaky
@@ -116,52 +119,33 @@ def test_make_report():
         ]
     )
 
+    assert p.prediction, "Prediction should be true"
+    assert len(p.vulnerabilities) > 0, "Vulnerabilities should be non-empty"
+
     report = format_vulnerability_to_report(p.vulnerabilities)
     print(report)
-    return
+    assert isinstance(report, str)
 
-    code = ""
-    with open("samples/target_repo_output.txt", "r") as file:
-        code = file.read()
+    for vuln in p.vulnerabilities:
+        assert isinstance(vuln, Vulnerability)
+        assert isinstance(vuln.category, VulnerabilityCategory)
 
-    try:
-        response = code_to_vulns(code)
-        bt.logging.info(f"Response: {response}")
+        # each should be a string with content
+        assert isinstance(vuln.description, str)
+        assert len(vuln.description) > 0
+        assert isinstance(vuln.vulnerable_code, str)
+        assert len(vuln.vulnerable_code) > 0
+        assert isinstance(vuln.code_to_exploit, str)
+        assert len(vuln.code_to_exploit) > 0
+        assert isinstance(vuln.rewritten_code_to_fix_vulnerability, str)
+        assert len(vuln.rewritten_code_to_fix_vulnerability) > 0
 
-        if not response.prediction:
-            bt.logging.info("No vulnerabilities found")
-            return
+        # line_ranges is optional
+        if vuln.line_ranges:
+            assert isinstance(vuln.line_ranges, list)
+            for line_range in vuln.line_ranges:
+                assert isinstance(line_range, LineRange)
+                assert isinstance(line_range.start, int)
+                assert isinstance(line_range.end, int)
 
-        # Validate response structure
-        assert isinstance(response, PredictionResponse)
-        assert isinstance(response.prediction, bool)
-        assert isinstance(response.vulnerabilities, list)
 
-        for vuln in response.vulnerabilities:
-            assert isinstance(vuln, Vulnerability)
-            assert isinstance(vuln.category, VulnerabilityCategory)
-            # each should be a string with content
-            assert isinstance(vuln.description, str)
-            assert len(vuln.description) > 0
-            assert isinstance(vuln.vulnerable_code, str)
-            assert len(vuln.vulnerable_code) > 0
-            assert isinstance(vuln.code_to_exploit, str)
-            assert len(vuln.code_to_exploit) > 0
-            assert isinstance(vuln.rewritten_code_to_fix_vulnerability, str)
-            assert len(vuln.rewritten_code_to_fix_vulnerability) > 0
-
-            # line_ranges is optional
-            if vuln.line_ranges:
-                assert isinstance(vuln.line_ranges, list)
-                for line_range in vuln.line_ranges:
-                    assert isinstance(line_range, LineRange)
-                    assert isinstance(line_range.start, int)
-                    assert isinstance(line_range.end, int)
-
-        report = format_vulnerability_to_report(response.vulnerabilities)
-        assert isinstance(report, str)
-        print(report)
-
-    except Exception as e:
-        bt.logging.error(f"Error in test_make_report: {str(e)}")
-        raise
