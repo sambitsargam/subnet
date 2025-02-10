@@ -58,7 +58,7 @@ async def forward(self):
         bt.logging.warning(f"❌❌❌❌❌ No miners found, skipping challenge")
         return
 
-    vulnerable = random.random() < 0.5
+    vulnerable = random.random() < 0.8
     challenge, expected_response = create_challenge(vulnerable=vulnerable)
     bt.logging.info(f"created challenge")
 
