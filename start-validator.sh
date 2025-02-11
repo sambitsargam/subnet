@@ -1,7 +1,7 @@
 #!/bin/bash
 NETUID=60 # Default to mainnet
 
-echo "Starting validator in ./scripts/start-validator-once.sh..."
+echo "Starting validator in ./scripts/start-validator.sh"
 
 # Kill previous instance if running
 PID_FILE="../validator.pid"
