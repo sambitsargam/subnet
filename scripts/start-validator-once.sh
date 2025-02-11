@@ -1,5 +1,5 @@
 #!/bin/bash
-NETUID=209 # Default to testnet
+NETUID=60 # Default to mainnet
 
 echo "Starting validator in ./scripts/start-validator-once.sh..."
 
@@ -32,7 +32,7 @@ done
 
 
 echo "Starting validator with netuid $NETUID"
-python -m neurons.validator --netuid $NETUID --subtensor.chain_endpoint test \
+python -m neurons.validator --netuid $NETUID --subtensor.chain_endpoint finney \
     --wallet.name validator --wallet.hotkey default \
     --axon.port 8091 --axon.external_port 8091 \
     --logging.debug
