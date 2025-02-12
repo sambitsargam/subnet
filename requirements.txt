@@ -1,5 +1,5 @@
-bittensor-cli==9.0.0rc2
-bittensor==9.0.0rc5
+bittensor-cli==9.0.0rc3
+bittensor==9.0.0rc6
 starlette>=0.30.0
 pydantic>=2
 torch>=2
