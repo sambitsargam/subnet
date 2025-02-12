@@ -70,6 +70,8 @@ def add_args(cls, parser):
 
     parser.add_argument("--netuid", type=int, help="Subnet netuid", default=60)
 
+    parser.add_argument("--network", type=int, help="Subtensor network (test / finney)", default="finney")
+
     parser.add_argument(
         "--neuron.device",
         type=str,
