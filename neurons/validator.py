@@ -20,9 +20,14 @@
 
 import os
 import time
+import argparse
 
 # Bittensor
 import bittensor as bt
+
+# Logging
+import wandb
+from bitsec import __version__
 
 from neurons.validator_proxy import ValidatorProxy
 from bitsec.validator import forward
@@ -39,15 +44,44 @@ class Validator(BaseValidatorNeuron):
     """
 
     def __init__(self, config=None):
+        # Initialize config if not provided
+        if config is None:
+            parser = argparse.ArgumentParser()
+            bt.wallet.add_args(parser)
+            bt.subtensor.add_args(parser)
+            bt.logging.add_args(parser)
+            bt.axon.add_args(parser)
+            self.add_args(parser)
+            self.config = bt.config(parser)
+        
         super(Validator, self).__init__(config=config)
+
+        # Initialize wandb only if not disabled
+        if not self.config.wandb.off and not self.config.wandb.offline:
+            run_name = f'bitsec/validator-{self.uid}-{__version__}'
+            wandb_config = {
+                "uid": self.uid,
+                "validator_hotkey": self.wallet.hotkey.ss58_address,
+                "version": __version__,
+                "type": 'validator',
+                "netuid": self.config.netuid,
+                "subtensor_network": self.config.network,
+            }
+            
+            wandb.init(
+                name=run_name,
+                project=self.config.wandb.project_name,
+                entity=self.config.wandb.entity,
+                config=wandb_config,
+                notes=self.config.wandb.notes,
+                mode="offline" if self.config.wandb.offline else "online"
+            )
 
         bt.logging.info("load_state()")
         self.load_state()
 
         self.last_responding_miner_uids = []
         self.validator_proxy = ValidatorProxy(self)
-
-        self._fake_prob = self.config.get('fake_prob', 0.5)
 
     async def forward(self):
         """
