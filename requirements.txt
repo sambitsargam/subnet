@@ -8,5 +8,4 @@ setuptools>=68
 tenacity>=9
 openai>=1.47
 flaky>=3.8.1
-
-
+wandb>=0.19.6
