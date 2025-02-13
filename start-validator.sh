@@ -1,5 +1,8 @@
 #!/bin/bash
+NETUID=60 # Default to mainnet
 
-# Directly pass all command-line arguments to the Python module
-echo "Starting validator with arguments: $@"
-python -m neurons.validator "$@"
+echo "Starting validator with netuid $NETUID"
+python -m neurons.validator --netuid $NETUID --subtensor.chain_endpoint finney \
+    --wallet.name validator --wallet.hotkey default \
+    --axon.port 8091 --axon.external_port 8091 \
+    --logging.debug
