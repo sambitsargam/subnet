@@ -22,7 +22,8 @@ import argparse
 import bittensor as bt
 from .logging import setup_events_logger
 
-def is_cuda_available():
+def is_cuda_available() -> str:
+    """Check if CUDA is available on the system."""
     try:
         output = subprocess.check_output(["nvidia-smi", "-L"], stderr=subprocess.STDOUT)
         if "NVIDIA" in output.decode("utf-8"):
@@ -37,10 +38,76 @@ def is_cuda_available():
         pass
     return "cpu"
 
-def check_config(cls, config: "bt.Config"):
-    r"""Checks/validates the config namespace object."""
-    bt.logging.check_config(config)
+def base_args(parser: argparse.ArgumentParser) -> argparse.ArgumentParser:
+    """Add common Bittensor arguments."""
+    bt.wallet.add_args(parser)
+    bt.subtensor.add_args(parser)
+    bt.logging.add_args(parser)
+    bt.axon.add_args(parser)
+    parser.add_argument("--netuid", type=int, default=60, help="Subnet netuid")
+    parser.add_argument("--network", type=str, default="finney", help="Subtensor network (test / finney)")
+    parser.add_argument("--neuron.device", type=str, default=is_cuda_available(), help="Device to run on.")
+    parser.add_argument("--neuron.epoch_length", type=int, default=100, help="Epoch length in 12 second blocks.")
+    parser.add_argument("--mock", action="store_true", default=False, help="Mock neuron and all network components.")
+    parser.add_argument("--neuron.events_retention_size", type=int, default=2 * 1024 * 1024 * 1024, help="Events retention size.")
+    parser.add_argument("--neuron.dont_save_events", action="store_true", default=False, help="If set, we don't save events to a log file.")
+    parser.add_argument("--wandb.off", action="store_true", default=False, help="Turn off wandb.")
+    parser.add_argument("--wandb.offline", action="store_true", default=False, help="Runs wandb in offline mode.")
+    parser.add_argument("--wandb.notes", type=str, default="", help="Notes to add to the wandb run.")
+    return parser
 
+def add_common_wandb_args(parser: argparse.ArgumentParser, project_name: str, entity: str) -> None:
+    """Add common wandb arguments."""
+    parser.add_argument("--wandb.project_name", type=str, default=project_name, help="Wandb project to log to.")
+    parser.add_argument("--wandb.entity", type=str, default=entity, help="Wandb entity to log to.")
+
+def add_miner_args(parser: argparse.ArgumentParser) -> argparse.ArgumentParser:
+    """Add miner specific arguments."""
+    parser.add_argument("--neuron.name", type=str, default="miner", help="Name for the miner neuron")
+    parser.add_argument("--blacklist.force_validator_permit", action="store_true", default=False, help="Force incoming requests to have a permit.")
+    parser.add_argument("--blacklist.allow_non_registered", action="store_true", default=False, help="Accept queries from non-registered entities.")
+    add_common_wandb_args(parser, "bitsec-miners", "bitsecai")
+    return parser
+
+def add_validator_args(parser: argparse.ArgumentParser) -> argparse.ArgumentParser:
+    """Add validator specific arguments."""
+    parser.add_argument("--neuron.name", type=str, default="validator", help="Name for the validator neuron")
+    parser.add_argument("--neuron.timeout", type=float, default=30, help="Timeout for forward calls (seconds)")
+    parser.add_argument("--neuron.num_concurrent_forwards", type=int, default=1, help="Number of concurrent forwards running at any time.")
+    parser.add_argument("--neuron.sample_size", type=int, default=100, help="Number of miners to query in a single step.")
+    parser.add_argument("--neuron.disable_set_weights", action="store_true", default=False, help="Disables setting weights.")
+    parser.add_argument("--neuron.moving_average_alpha", type=float, default=0.1, help="Moving average alpha parameter.")
+    parser.add_argument("--neuron.axon_off", "--axon_off", action="store_true", default=False, help="Set this flag to not attempt to serve an Axon.")
+    parser.add_argument("--neuron.vpermit_tao_limit", type=int, default=4096, help="Max TAO allowed to query a validator with a vpermit.")
+    parser.add_argument("--proxy.port", type=int, default=10913, help="Port to run the proxy on.")
+    add_common_wandb_args(parser, "bitsec-validators", "bitsecai")
+    return parser
+
+def get_config(mode: str = "validator") -> bt.Config:
+    """Returns the configuration object specific to this miner or validator after adding relevant arguments."""
+    parser = argparse.ArgumentParser(description="Consolidated config for Bittensor node")
+    parser = base_args(parser)
+    
+    if mode == "validator":
+        parser = add_validator_args(parser)
+    elif mode == "miner":
+        parser = add_miner_args(parser)
+    else:
+        raise ValueError("Mode must be either 'validator' or 'miner'")
+    
+    config = bt.config(parser)
+    check_config(config)
+    return config
+
+def check_config(config: bt.Config) -> None:
+    """Validate the configuration to ensure all necessary settings are correct."""
+    if config.neuron.device not in ["cuda", "cpu"]:
+        raise ValueError("Invalid device specified. Must be 'cuda' or 'cpu'.")
+    if config.neuron.epoch_length <= 0:
+        raise ValueError("Epoch length must be a positive integer.")
+    if config.mode not in ["validator", "miner"]:
+        raise ValueError("Mode must be either 'validator' or 'miner'.")
+    
     full_path = os.path.expanduser(
         "{}/{}/{}/netuid{}/{}".format(
             config.logging.logging_dir,  # TODO: change from ~/.bittensor/miners to ~/.bittensor/neurons
@@ -54,212 +121,11 @@ def check_config(cls, config: "bt.Config"):
     config.neuron.full_path = os.path.expanduser(full_path)
     if not os.path.exists(config.neuron.full_path):
         os.makedirs(config.neuron.full_path, exist_ok=True)
-
+    
+    # Log the configuration for debugging
     if not config.neuron.dont_save_events:
         # Add custom event logger for the events.
         events_logger = setup_events_logger(
             config.neuron.full_path, config.neuron.events_retention_size
         )
         bt.logging.register_primary_logger(events_logger.name)
-
-
-def add_args(cls, parser):
-    """
-    Adds relevant arguments to the parser for operation.
-    """
-
-    parser.add_argument("--netuid", type=int, help="Subnet netuid", default=60)
-
-    parser.add_argument("--network", type=int, help="Subtensor network (test / finney)", default="finney")
-
-    parser.add_argument(
-        "--neuron.device",
-        type=str,
-        help="Device to run on.",
-        default=is_cuda_available(),
-    )
-
-    parser.add_argument(
-        "--neuron.epoch_length",
-        type=int,
-        help="The default epoch length (how often we set weights, measured in 12 second blocks).",
-        default=100,
-    )
-
-    parser.add_argument(
-        "--mock",
-        action="store_true",
-        help="Mock neuron and all network components.",
-        default=False,
-    )
-
-    parser.add_argument(
-        "--neuron.events_retention_size",
-        type=str,
-        help="Events retention size.",
-        default=2 * 1024 * 1024 * 1024,  # 2 GB
-    )
-
-    parser.add_argument(
-        "--neuron.dont_save_events",
-        action="store_true",
-        help="If set, we dont save events to a log file.",
-        default=False,
-    )
-
-    parser.add_argument(
-        "--wandb.off",
-        action="store_true",
-        help="Turn off wandb.",
-        default=False,
-    )
-
-    parser.add_argument(
-        "--wandb.offline",
-        action="store_true",
-        help="Runs wandb in offline mode.",
-        default=False,
-    )
-
-    parser.add_argument(
-        "--wandb.notes",
-        type=str,
-        help="Notes to add to the wandb run.",
-        default="",
-    )
-
-
-def add_miner_args(cls, parser):
-    """Add miner specific arguments to the parser."""
-
-    parser.add_argument(
-        "--neuron.name",
-        type=str,
-        help="Trials for this neuron go in neuron.root / (wallet_cold - wallet_hot) / neuron.name. ",
-        default="miner",
-    )
-
-    parser.add_argument(
-        "--blacklist.force_validator_permit",
-        action="store_true",
-        help="If set, we will force incoming requests to have a permit.",
-        default=False,
-    )
-
-    parser.add_argument(
-        "--blacklist.allow_non_registered",
-        action="store_true",
-        help="If set, miners will accept queries from non registered entities. (Dangerous!)",
-        default=False,
-    )
-
-    parser.add_argument(
-        "--wandb.project_name",
-        type=str,
-        default="bitsec-miners",
-        help="Wandb project to log to.",
-    )
-
-    parser.add_argument(
-        "--wandb.entity",
-        type=str,
-        default="bitsecai",
-        help="Wandb entity to log to.",
-    )
-
-
-def add_validator_args(cls, parser):
-    """Add validator specific arguments to the parser."""
-
-    parser.add_argument(
-        "--neuron.name",
-        type=str,
-        help="Trials for this neuron go in neuron.root / (wallet_cold - wallet_hot) / neuron.name. ",
-        default="validator",
-    )
-
-    parser.add_argument(
-        "--neuron.timeout",
-        type=float,
-        help="The timeout for each forward call in seconds.",
-        default=30,
-    )
-
-    parser.add_argument(
-        "--neuron.num_concurrent_forwards",
-        type=int,
-        help="The number of concurrent forwards running at any time.",
-        default=1,
-    )
-
-    parser.add_argument(
-        "--neuron.sample_size",
-        type=int,
-        help="The number of miners to query in a single step.",
-        default=100,
-    )
-
-    parser.add_argument(
-        "--neuron.disable_set_weights",
-        action="store_true",
-        help="Disables setting weights.",
-        default=False,
-    )
-
-    parser.add_argument(
-        "--neuron.moving_average_alpha",
-        type=float,
-        help="Moving average alpha parameter, how much to add of the new observation.",
-        default=0.1,
-    )
-
-    parser.add_argument(
-        "--neuron.axon_off",
-        "--axon_off",
-        action="store_true",
-        # Note: the validator needs to serve an Axon with their IP or they may
-        #   be blacklisted by the firewall of serving peers on the network.
-        help="Set this flag to not attempt to serve an Axon.",
-        default=False,
-    )
-
-    parser.add_argument(
-        "--neuron.vpermit_tao_limit",
-        type=int,
-        help="The maximum number of TAO allowed to query a validator with a vpermit.",
-        default=4096,
-    )
-
-    parser.add_argument(
-        "--wandb.project_name",
-        type=str,
-        help="The name of the project where you are sending the new run.",
-        default="bitsec-validators",
-    )
-
-    parser.add_argument(
-        "--wandb.entity",
-        type=str,
-        help="The name of the project where you are sending the new run.",
-        default="bitsecai",
-    )
-
-    parser.add_argument(
-        "--proxy.port",
-        type=int,
-        help="The port to run the proxy on.",
-        default=10913
-    )
-
-
-def config(cls):
-    """
-    Returns the configuration object specific to this miner or validator after adding relevant arguments.
-    """
-    parser = argparse.ArgumentParser()
-    bt.wallet.add_args(parser)
-    bt.subtensor.add_args(parser)
-    bt.logging.add_args(parser)
-    bt.axon.add_args(parser)
-    cls.add_args(parser)
-    return bt.config(parser)
