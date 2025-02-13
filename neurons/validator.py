@@ -43,31 +43,30 @@ class Validator(BaseValidatorNeuron):
     This class provides reasonable default behavior for a validator such as keeping a moving average of the scores of the miners and using them to set weights at the end of each epoch. Additionally, the scores are reset for new hotkeys at the end of each epoch.
     """
 
-    def __init__(self, config=None):
-        # Initialize config if not provided
-        if config is None:
-            parser = argparse.ArgumentParser()
-            bt.wallet.add_args(parser)
-            bt.subtensor.add_args(parser)
-            bt.logging.add_args(parser)
-            bt.axon.add_args(parser)
-            self.add_args(parser)
-            self.config = bt.config(parser)
-        
-        super(Validator, self).__init__(config=config)
 
-        # Initialize wandb only if not disabled
+from bitsec.utils.config import get_config
+import bittensor as bt
+import time
+
+if __name__ == "__main__":
+    validator = Validator()
+    validator.run()
+    def __init__(self, config=None):
+        # Load the consolidated configuration for the validator.
+        self.config = get_config(mode="validator")
+        super(Validator, self).__init__(config=self.config)
+
+        # Initialize wandb if enabled
         if not self.config.wandb.off and not self.config.wandb.offline:
             run_name = f'bitsec/validator-{self.uid}-{__version__}'
             wandb_config = {
                 "uid": self.uid,
-                "validator_hotkey": self.wallet.hotkey.ss58_address,
+                "hotkey": self.wallet.hotkey.ss58_address,
                 "version": __version__,
                 "type": 'validator',
                 "netuid": self.config.netuid,
                 "subtensor_network": self.config.network,
             }
-            
             wandb.init(
                 name=run_name,
                 project=self.config.wandb.project_name,

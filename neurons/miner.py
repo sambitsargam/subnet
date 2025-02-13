@@ -27,6 +27,7 @@ import wandb
 from bitsec import __version__
 
 # import base miner class which takes care of most of the boilerplate
+from bitsec.utils.config import get_config
 from bitsec.base.miner import BaseMinerNeuron
 from bitsec.protocol import CodeSynapse
 from bitsec.miner.predict import predict
@@ -42,24 +43,15 @@ class Miner(BaseMinerNeuron):
     """
 
     def __init__(self, config=None):
-        # Initialize config if not provided
-        if config is None:
-            parser = argparse.ArgumentParser()
-            bt.wallet.add_args(parser)
-            bt.subtensor.add_args(parser)
-            bt.logging.add_args(parser)
-            bt.axon.add_args(parser)
-            self.add_args(parser)
-            self.config = bt.config(parser)
-        
+        self.config = get_config(mode="validator")
         super(Miner, self).__init__(config=config)
 
-        # Initialize wandb only if not disabled
+        # Initialize wandb only if enabled
         if not self.config.wandb.off and not self.config.wandb.offline:
             run_name = f'bitsec/miner-{self.uid}-{__version__}'
             wandb_config = {
                 "uid": self.uid,
-                "validator_hotkey": self.wallet.hotkey.ss58_address,
+                "hotkey": self.wallet.hotkey.ss58_address,
                 "version": __version__,
                 "type": 'miner',
                 "netuid": self.config.netuid,
