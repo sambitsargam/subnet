@@ -58,8 +58,8 @@ def base_args(parser: argparse.ArgumentParser) -> argparse.ArgumentParser:
 
 def add_common_wandb_args(parser: argparse.ArgumentParser, project_name: str, entity: str) -> None:
     """Add common wandb arguments."""
-    parser.add_argument("--wandb.project_name", type=str, default=project_name, help="Wandb project to log to.")
-    parser.add_argument("--wandb.entity", type=str, default=entity, help="Wandb entity to log to.")
+    parser.add_argument("--wandb.project_name", type=str, default="bitsec-miners", help="Wandb project to log to.")
+    parser.add_argument("--wandb.entity", type=str, default="bitsecai", help="Wandb entity to log to.")
 
 def add_miner_args(parser: argparse.ArgumentParser) -> argparse.ArgumentParser:
     """Add miner specific arguments."""
