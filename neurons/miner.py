@@ -42,16 +42,6 @@ class Miner(BaseMinerNeuron):
     """
 
     def __init__(self, config=None):
-        # Initialize config if not provided
-        if config is None:
-            parser = argparse.ArgumentParser()
-            bt.wallet.add_args(parser)
-            bt.subtensor.add_args(parser)
-            bt.logging.add_args(parser)
-            bt.axon.add_args(parser)
-            self.add_args(parser)
-            self.config = bt.config(parser)
-        
         super(Miner, self).__init__(config=config)
 
         # Initialize wandb only if not disabled
