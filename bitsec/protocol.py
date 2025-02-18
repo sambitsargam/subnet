@@ -22,6 +22,7 @@ import bittensor as bt
 import pydantic
 from typing import List, Optional, Tuple, Union
 from bitsec.base.vulnerability_category import VulnerabilityCategory
+from bitsec.base.vulnerability_status import VulnerabilityStatus
 
 def prepare_code_synapse(code: str):
     """
@@ -109,7 +110,52 @@ class Vulnerability(pydantic.BaseModel):
     def __dict__(self):
         """Make JSON serializable by default."""
         return self.model_dump()
-    
+
+class VulnerabilityByMiner(Vulnerability):
+    """
+    Represents a security vulnerability found in code by a specific miner.
+    Extends the base Vulnerability class with miner-specific information.
+    """
+    miner_id: str = pydantic.Field(
+        description="The unique identifier of the miner that discovered this vulnerability"
+    )
+    vulnerability_status: VulnerabilityStatus = pydantic.Field(
+        description="The status of the vulnerability"
+    )
+
+    model_config = { "populate_by_name": True }
+
+        # get field attrs from model
+    def __getattr__(self, name):
+        try:
+            return self.model_dump()[name]
+        except KeyError:
+            raise AttributeError(f"'{self.__class__.__name__}' has no attribute '{name}'")
+
+    @classmethod
+    def from_json(cls, json_data: Union[str, str, dict]) -> 'VulnerabilityByMiner':
+        """Create a VulnerabilityByMiner from JSON data.
+        
+        Args:
+            json_data: Either a JSON string or a dictionary containing the response data
+            
+        Returns:
+            VulnerabilityByMiner: A new instance of VulnerabilityByMiner
+        """
+        if isinstance(json_data, str):
+            json_data = json.loads(json_data)
+        return cls(**json_data)
+
+    @classmethod
+    def from_tuple(cls, data: Tuple[str, VulnerabilityStatus, Vulnerability]) -> 'VulnerabilityByMiner':
+        return cls(miner_id=data[0], vulnerability_status=data[1], vulnerability=data[2])
+
+    @classmethod
+    def from_tuple(cls, data: Tuple[str, Vulnerability]) -> 'VulnerabilityByMiner':
+        return cls(miner_id=data[0], vulnerability_status=VulnerabilityStatus.get_default_status(), vulnerability=data[2])
+
+    def to_tuple(self) -> Tuple[str, VulnerabilityStatus, Vulnerability]:
+        return (self.miner_id, self.vulnerability_status, self.vulnerability)
 
 # PredictionResponse is the response from the Miner
 class PredictionResponse(pydantic.BaseModel):
