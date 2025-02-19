@@ -10,7 +10,7 @@ import random
 import numpy as np
 import socket
 
-from bitsec.protocol import prepare_code_synapse
+from bitsec.protocol import prepare_code_synapse, PredictionResponse, Vulnerability, VulnerabilityByMiner, VulnerabilityStatus
 from bitsec.utils.uids import get_random_uids
 from bitsec.validator.proxy import ProxyCounter
 
@@ -163,16 +163,31 @@ class ValidatorProxy:
         bt.logging.info(f"[ORGANIC] {responses}")
 
         # return predictions from miners
-        valid_pred_idx = np.array([i for i, v in enumerate(responses) if v.prediction != -1.])
+        valid_pred_idx = np.array([i for i, v in enumerate(responses) if v.prediction])
         if len(valid_pred_idx) > 0:
             valid_preds = np.array(responses)[valid_pred_idx]
             valid_pred_uids = np.array(miner_uids)[valid_pred_idx]
             if len(valid_preds) > 0:
                 self.proxy_counter.update(is_success=True)
                 self.proxy_counter.save()
+                
+                # how claude suggests, not sure this is right, to transform predictions into VulnerabilityByMiner objects
+                vulnerabilities_by_miner = []
+                for uid, pred in zip(valid_pred_uids, valid_preds):
+                    # Each pred is a PredictionResponse with vulnerabilities list
+                    for vuln in pred.vulnerabilities:
+                        if isinstance(vuln, Vulnerability):
+                            vulnerabilities_by_miner.append(
+                                VulnerabilityByMiner(
+                                    miner_id=str(int(uid)),  # Convert to string as required by the model
+                                    vulnerability_status=VulnerabilityStatus.get_default_status(),
+                                    **vuln.model_dump()  # Include all fields from the base Vulnerability
+                                )
+                            )
+                
                 data = {
                     'uids': [int(uid) for uid in valid_pred_uids],
-                    'preds': [pred.to_tuple() for pred in valid_preds],
+                    'preds': [vuln.model_dump() for vuln in vulnerabilities_by_miner],
                     'ranks': [float(self.validator.metagraph.R[uid]) for uid in valid_pred_uids],
                     'incentives': [float(self.validator.metagraph.I[uid]) for uid in valid_pred_uids],
                     'emissions': [float(self.validator.metagraph.E[uid]) for uid in valid_pred_uids],
