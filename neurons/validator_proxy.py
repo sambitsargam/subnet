@@ -10,7 +10,7 @@ import random
 import numpy as np
 import socket
 
-from bitsec.protocol import prepare_code_synapse, PredictionResponse, Vulnerability, VulnerabilityByMiner, VulnerabilityStatus
+from bitsec.protocol import prepare_code_synapse, PredictionResponse, Vulnerability, VulnerabilityByMiner
 from bitsec.utils.uids import get_random_uids
 from bitsec.validator.proxy import ProxyCounter
 
