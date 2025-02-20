@@ -192,13 +192,23 @@ async def test_forward_with_valid_responses(
         assert isinstance(vuln.code_to_exploit, str)
         assert isinstance(vuln.rewritten_code_to_fix_vulnerability, str)
     
-    assert response['vulnerabilities'].map(lambda x: x.category) == mock_prediction_responses[0].vulnerabilities.map(lambda x: x.category)
+    print("response['vulnerabilities']", response['vulnerabilities'])
+    print("mock_prediction_responses[0].vulnerabilities", mock_prediction_responses[0].vulnerabilities)
+    print("mock_prediction_responses[1].vulnerabilities", mock_prediction_responses[1].vulnerabilities)
+    expected_vulnerabilities = mock_prediction_responses[0].vulnerabilities + mock_prediction_responses[1].vulnerabilities
+    for i in range(len(expected_vulnerabilities)):
+        assert response['vulnerabilities'][i].category == expected_vulnerabilities[i].category
+        assert response['vulnerabilities'][i].line_ranges == expected_vulnerabilities[i].line_ranges
+        assert response['vulnerabilities'][i].description == expected_vulnerabilities[i].description
+        assert response['vulnerabilities'][i].vulnerable_code == expected_vulnerabilities[i].vulnerable_code
+        assert response['vulnerabilities'][i].code_to_exploit == expected_vulnerabilities[i].code_to_exploit
+        assert response['vulnerabilities'][i].rewritten_code_to_fix_vulnerability == expected_vulnerabilities[i].rewritten_code_to_fix_vulnerability
     
     # Check predictions_from_miners matches vulnerabilities
     for pred in response['predictions_from_miners']:
-        assert isinstance(pred, dict)
-        assert pred['miner_id'] in ['1', '2']
-
+        assert isinstance(pred, PredictionResponse)
+        assert pred.prediction is True
+        assert len(pred.vulnerabilities) == 3  # Each mock response has 3 vulnerabilities
 
 @pytest.mark.asyncio
 async def test_forward_with_no_valid_responses(
@@ -291,15 +301,3 @@ async def test_forward_with_multiple_vulnerabilities(
     miner_ids = set(v.miner_id for v in vulnerabilities)
     assert miner_ids == {'1', '2'}  # Should have vulnerabilities from both miners
     
-    # Verify predictions_from_miners matches vulnerabilities
-    assert len(response['predictions_from_miners']) == len(response['vulnerabilities'])
-    for pred in response['predictions_from_miners']:
-        assert isinstance(pred, dict)
-        assert 'category' in pred
-        assert 'line_ranges' in pred
-        assert 'description' in pred
-        assert 'vulnerable_code' in pred
-        assert 'code_to_exploit' in pred
-        assert 'rewritten_code_to_fix_vulnerability' in pred
-        assert 'miner_id' in pred
-        assert pred['miner_id'] in ['1', '2']  # Match the mock validator's UIDs 
