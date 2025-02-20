@@ -168,31 +168,31 @@ class ValidatorProxy:
             valid_preds = np.array(responses)[valid_pred_idx]
             valid_pred_uids = np.array(miner_uids)[valid_pred_idx]
             if len(valid_preds) > 0:
-                self.proxy_counter.update(is_success=True)
-                self.proxy_counter.save()
-                
-                # how claude suggests, not sure this is right, to transform predictions into VulnerabilityByMiner objects
+                # Merge all vulnerabilities from all miners into a single list
                 vulnerabilities_by_miner = []
                 for uid, pred in zip(valid_pred_uids, valid_preds):
-                    # Each pred is a PredictionResponse with vulnerabilities list
                     for vuln in pred.vulnerabilities:
-                        if isinstance(vuln, Vulnerability):
-                            vulnerabilities_by_miner.append(
-                                VulnerabilityByMiner(
-                                    miner_id=str(int(uid)),  # Convert to string as required by the model
-                                    vulnerability_status=VulnerabilityStatus.get_default_status(),
-                                    **vuln.model_dump()  # Include all fields from the base Vulnerability
-                                )
+                        vulnerabilities_by_miner.append(
+                            VulnerabilityByMiner(
+                                miner_id=str(uid),  # Convert to string as required by the model
+                                **vuln.model_dump()  # Include all fields from the base Vulnerability
                             )
+                        )
                 
                 data = {
                     'uids': [int(uid) for uid in valid_pred_uids],
-                    'preds': [vuln.model_dump() for vuln in vulnerabilities_by_miner],
+                    'vulnerabilities': vulnerabilities_by_miner,
+                    'predictions_from_miners': [vuln.model_dump() for vuln in vulnerabilities_by_miner],
                     'ranks': [float(self.validator.metagraph.R[uid]) for uid in valid_pred_uids],
                     'incentives': [float(self.validator.metagraph.I[uid]) for uid in valid_pred_uids],
                     'emissions': [float(self.validator.metagraph.E[uid]) for uid in valid_pred_uids],
                     'fqdn': socket.getfqdn()
                 }
+
+                self.proxy_counter.update(is_success=True)
+                self.proxy_counter.save()
+
+                # write data to database
                 return data
 
         self.proxy_counter.update(is_success=False)
