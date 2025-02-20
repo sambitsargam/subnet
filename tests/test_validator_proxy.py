@@ -1,9 +1,6 @@
-import os
 import pytest
-from unittest.mock import AsyncMock, MagicMock, patch
-import bittensor as bt
+from unittest.mock import AsyncMock, MagicMock
 import numpy as np
-from fastapi import Request
 import json
 
 from neurons.validator_proxy import ValidatorProxy
@@ -53,18 +50,17 @@ def mock_prediction_responses() -> list[PredictionResponse]:
     Returns:
         list[PredictionResponse]: A list of mock prediction responses.
     """
-    vuln = Vulnerability(
-        category=VulnerabilityCategory.ARITHMETIC_OVERFLOW_AND_UNDERFLOW,
-        line_ranges=[LineRange(start=1, end=9)],
-        description="Can lead to loss of funds",
-        vulnerable_code="",
-        code_to_exploit="",
-        rewritten_code_to_fix_vulnerability=""
-    )
+    vuln1 = Vulnerability(category=VulnerabilityCategory.ARITHMETIC_OVERFLOW_AND_UNDERFLOW, line_ranges=[LineRange(start=1, end=9)], description="Can lead to loss of funds", vulnerable_code="", code_to_exploit="", rewritten_code_to_fix_vulnerability="")
+    vuln2 = Vulnerability(category=VulnerabilityCategory.WEAK_ACCESS_CONTROL, line_ranges=[LineRange(start=10, end=20)], description="Allows unauthorized access to sensitive data", vulnerable_code="", code_to_exploit="", rewritten_code_to_fix_vulnerability="")
+    vuln3 = Vulnerability(category=VulnerabilityCategory.REENTRANCY, line_ranges=[LineRange(start=21, end=30)], description="Can lead to loss of funds", vulnerable_code="", code_to_exploit="", rewritten_code_to_fix_vulnerability="")
+    vuln4 = Vulnerability(category=VulnerabilityCategory.INCORRECT_CALCULATION, line_ranges=[LineRange(start=30, end=40)], description="Allows unauthorized access to terminate the contract", vulnerable_code="", code_to_exploit="", rewritten_code_to_fix_vulnerability="")
+    vuln5 = Vulnerability(category=VulnerabilityCategory.BAD_RANDOMNESS, line_ranges=[LineRange(start=30, end=40)], description="Allows unauthorized access to terminate the contract", vulnerable_code="", code_to_exploit="", rewritten_code_to_fix_vulnerability="")
+    vuln6 = Vulnerability(category=VulnerabilityCategory.FRONT_RUNNING, line_ranges=[LineRange(start=30, end=40)], description="Allows unauthorized access to terminate the contract", vulnerable_code="", code_to_exploit="", rewritten_code_to_fix_vulnerability="")
+
     
     return [
-        PredictionResponse(prediction=True, vulnerabilities=[vuln]),
-        PredictionResponse(prediction=True, vulnerabilities=[vuln])
+        PredictionResponse(prediction=True, vulnerabilities=[vuln1, vuln2, vuln3]),
+        PredictionResponse(prediction=True, vulnerabilities=[vuln4, vuln5, vuln6])
     ]
 
 @pytest.fixture
@@ -184,29 +180,25 @@ async def test_forward_with_valid_responses(
     # Verify vulnerability data
     assert 'vulnerabilities' in response
     assert 'predictions_from_miners' in response
-    assert len(response['vulnerabilities']) == 2  # One vulnerability from each miner
+    assert len(response['vulnerabilities']) == 6  # One vulnerability from each miner
     assert len(response['predictions_from_miners']) == 2
     
     # Check vulnerability structure
     for vuln in response['vulnerabilities']:
         assert isinstance(vuln, VulnerabilityByMiner)
-        assert vuln.miner_id in ['1', '2']  # Updated miner IDs
-        assert vuln.category == VulnerabilityCategory.ARITHMETIC_OVERFLOW_AND_UNDERFLOW
-        assert vuln.line_ranges[0]["start"] == 1
-        assert vuln.line_ranges[0]["end"] == 9
+        assert vuln.miner_id in ['1', '2']
         assert isinstance(vuln.description, str)
         assert isinstance(vuln.vulnerable_code, str)
         assert isinstance(vuln.code_to_exploit, str)
         assert isinstance(vuln.rewritten_code_to_fix_vulnerability, str)
     
+    assert response['vulnerabilities'].map(lambda x: x.category) == mock_prediction_responses[0].vulnerabilities.map(lambda x: x.category)
+    
     # Check predictions_from_miners matches vulnerabilities
     for pred in response['predictions_from_miners']:
         assert isinstance(pred, dict)
-        assert pred['miner_id'] in ['1', '2']  # Updated miner IDs
-        assert pred['category'] == VulnerabilityCategory.ARITHMETIC_OVERFLOW_AND_UNDERFLOW
-        assert isinstance(pred['line_ranges'], list)
-        assert pred['line_ranges'][0]['start'] == 1
-        assert pred['line_ranges'][0]['end'] == 9
+        assert pred['miner_id'] in ['1', '2']
+
 
 @pytest.mark.asyncio
 async def test_forward_with_no_valid_responses(
@@ -232,63 +224,6 @@ async def test_forward_with_no_valid_responses(
     response = await proxy.forward(mock_request)
     assert response.status_code == 500
     assert response.detail == "No valid response received"
-
-# @pytest.mark.asyncio
-# async def test_forward_with_empty_miner_uids(
-#     mock_validator: MagicMock,
-#     mock_request: MagicMock,
-#     mock_prediction_responses: list[PredictionResponse]
-# ) -> None:
-#     """
-#     Test the forward method when there are no responding miner UIDs.
-    
-#     Args:
-#         mock_validator: Mock validator fixture
-#         mock_request: Mock request fixture
-#         mock_prediction_responses: Mock prediction responses fixture
-#     """
-#     # Set up additional metagraph mocks needed for random UID selection
-#     mock_validator.metagraph.S = np.zeros(3)  # Stake
-#     mock_validator.metagraph.validator_permit = np.ones(3, dtype=bool)  # All have permits
-#     mock_validator.metagraph.block = 0
-#     mock_validator.vpermit_tao_limit = 0  # No stake requirement
-    
-#     mock_validator.last_responding_miner_uids = []
-#     proxy = ValidatorProxy(mock_validator)
-    
-#     # Mock the dendrite call
-#     proxy.dendrite = AsyncMock(return_value=mock_prediction_responses)
-    
-#     # Call forward method
-#     response = await proxy.forward(mock_request)
-    
-#     # Verify that random UIDs were sampled and response structure
-#     assert mock_validator.last_responding_miner_uids == []
-#     assert isinstance(response, dict)
-#     assert 'uids' in response
-#     assert 'ranks' in response
-#     assert 'incentives' in response
-#     assert 'emissions' in response
-#     assert 'fqdn' in response
-#     assert 'vulnerabilities' in response
-#     assert 'predictions_from_miners' in response
-    
-#     # Since we're using random UIDs, we can't assert exact values
-#     # but we can verify the response contains valid data
-#     assert len(response['uids']) == 2  # Based on mock_prediction_responses having 2 items
-#     assert all(isinstance(uid, int) for uid in response['uids'])
-#     assert all(isinstance(rank, float) for rank in response['ranks'])
-#     assert all(isinstance(incentive, float) for incentive in response['incentives'])
-#     assert all(isinstance(emission, float) for emission in response['emissions'])
-#     assert isinstance(response['fqdn'], str)
-    
-#     # Check vulnerability data
-#     assert len(response['vulnerabilities']) == 2
-#     assert len(response['predictions_from_miners']) == 2
-#     for vuln in response['vulnerabilities']:
-#         assert isinstance(vuln, VulnerabilityByMiner)
-#         assert isinstance(vuln.miner_id, str)
-#         assert vuln.category == VulnerabilityCategory.ARITHMETIC_OVERFLOW_AND_UNDERFLOW
 
 @pytest.mark.asyncio
 async def test_forward_with_multiple_vulnerabilities(
@@ -352,7 +287,7 @@ async def test_forward_with_multiple_vulnerabilities(
     assert len(overflow_vulns) == 2  # Both miners reported overflow
     assert len(reentrancy_vulns) == 1  # Only second miner reported reentrancy
     
-    # Verify miner IDs - using the mock validator's UIDs [1, 2]
+    # Verify miner IDs
     miner_ids = set(v.miner_id for v in vulnerabilities)
     assert miner_ids == {'1', '2'}  # Should have vulnerabilities from both miners
     

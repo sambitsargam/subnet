@@ -178,11 +178,13 @@ class ValidatorProxy:
                                 **vuln.model_dump()  # Include all fields from the base Vulnerability
                             )
                         )
+                    print("miner uid", uid, "vulnerabilities", vulnerabilities_by_miner)
+                
                 
                 data = {
                     'uids': [int(uid) for uid in valid_pred_uids],
                     'vulnerabilities': vulnerabilities_by_miner,
-                    'predictions_from_miners': [vuln.model_dump() for vuln in vulnerabilities_by_miner],
+                    'predictions_from_miners': valid_preds,
                     'ranks': [float(self.validator.metagraph.R[uid]) for uid in valid_pred_uids],
                     'incentives': [float(self.validator.metagraph.I[uid]) for uid in valid_pred_uids],
                     'emissions': [float(self.validator.metagraph.E[uid]) for uid in valid_pred_uids],
