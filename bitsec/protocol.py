@@ -106,6 +106,26 @@ class Vulnerability(pydantic.BaseModel):
     
     model_config = { "populate_by_name": True }
 
+    @classmethod
+    def sort_vulnerabilities(cls, vulnerabilities: List['Vulnerability']) -> List['Vulnerability']:
+        """Sorts the list of vulnerabilities by their severity, then intelligently after that."""
+        return sorted(
+            vulnerabilities,
+            key=lambda v: (
+                # Sort severity highest first eg 99_CRITICAL, 85_HIGH...
+                -1 * v.severity.numeric_value(),
+                
+                # Then sort by line range start, since that will decrease scrolling while verifying.
+                # And if no line range it'll be harder to verify and fix, so put at end.
+                v.line_ranges[0]["start"] if v.line_ranges and len(v.line_ranges) > 0 and v.line_ranges[0]["start"] is not None else float('inf'),
+
+                # Sorting by category and description is silly, but guarantees sort order.
+                v.category.lower(),
+                v.description.lower(),
+            )
+        )
+
+
     # get field attrs from model
     def __getattr__(self, name):
         try:
@@ -136,21 +156,7 @@ class PredictionResponse(pydantic.BaseModel):
     def sort_vulnerabilities(self):
         """Sorts the list of vulnerabilities by their severity, then intelligently after that. Updates the vulnerabilities list in place.
         """
-        self.vulnerabilities = sorted(
-            self.vulnerabilities,
-            key=lambda v: (
-                # Sort severity highest first eg 99_CRITICAL, 85_HIGH...
-                -1 * v.severity.numeric_value(), 
-                
-                # Then sort by line range start, since that will decrease scrolling while verifying.
-                # And if no line range it'll be harder to verify and fix, so put at end.
-                v.line_ranges[0]["start"] if v.line_ranges else 0, 
-
-                # Sorting by category and description is silly, but guarantees sort order.
-                v.category.lower(), 
-                v.description.lower(),
-            )
-        )
+        self.vulnerabilities = Vulnerability.sort_vulnerabilities(self.vulnerabilities)
 
     # get field attrs from model
     def __getattr__(self, name):
