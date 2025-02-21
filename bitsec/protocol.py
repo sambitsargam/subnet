@@ -77,6 +77,9 @@ class LineRange(pydantic.BaseModel):
 
 class Vulnerability(pydantic.BaseModel):
     """Represents a security vulnerability found in code."""
+    title: str = pydantic.Field(
+        description="A short title for the vulnerability."
+    )
     line_ranges: Optional[List[LineRange]] = pydantic.Field(
         description="An array of lines of code ranges where the vulnerability is located. Optional, but strongly recommended. Consecutive lines should be a single range, eg lines 1-3 should NOT be [{start: 1, end: 1}, {start: 2, end: 2}, {start: 3, end: 3}] INSTEAD SHOULD BE [{start: 1, end: 3}].",
         default=None
@@ -85,7 +88,7 @@ class Vulnerability(pydantic.BaseModel):
         description="The category of vulnerability detected."
     )
     description: str = pydantic.Field(
-        description="Detailed description of the vulnerability, including why it could lead to financial loss."
+        description="Detailed description of the vulnerability, including financial impact and why this is a vulnerability."
     )
     vulnerable_code: str = pydantic.Field(
         description="Code snippet that contains the vulnerability"
