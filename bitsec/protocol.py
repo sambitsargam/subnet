@@ -136,7 +136,64 @@ class Vulnerability(pydantic.BaseModel):
     def __dict__(self):
         """Make JSON serializable by default."""
         return self.model_dump()
-    
+
+class VulnerabilityByMiner(Vulnerability):
+    """
+    Represents a security vulnerability found in code by a specific miner.
+    Extends the base Vulnerability class with miner-specific information.
+    """
+    miner_id: str = pydantic.Field(
+        description="The unique identifier of the miner that discovered this vulnerability"
+    )
+
+    model_config = { "populate_by_name": True }
+
+    # get field attrs from model
+    def __getattr__(self, name):
+        try:
+            return self.model_dump()[name]
+        except KeyError:
+            raise AttributeError(f"'{self.__class__.__name__}' has no attribute '{name}'")
+
+    @classmethod
+    def from_json(cls, json_data: Union[str, str, dict]) -> 'VulnerabilityByMiner':
+        """Create a VulnerabilityByMiner from JSON data.
+        
+        Args:
+            json_data: Either a JSON string or a dictionary containing the response data
+            
+        Returns:
+            VulnerabilityByMiner: A new instance of VulnerabilityByMiner
+        """
+        if isinstance(json_data, str):
+            json_data = json.loads(json_data)
+        return cls(**json_data)
+
+    @classmethod
+    def from_tuple(cls, data: Tuple[str, Vulnerability]) -> 'VulnerabilityByMiner':
+        """Create a VulnerabilityByMiner from a tuple of (miner_id, Vulnerability).
+        
+        Args:
+            data: Tuple containing (miner_id, Vulnerability instance)
+            
+        Returns:
+            VulnerabilityByMiner: A new instance with all Vulnerability fields plus miner_id
+        """
+        miner_id, vuln = data
+        # Create a dict with all Vulnerability fields plus miner_id
+        vuln_dict = vuln.model_dump()
+        vuln_dict['miner_id'] = miner_id
+        return cls.model_validate(vuln_dict)
+
+    def to_tuple(self) -> Tuple[str, Vulnerability]:
+        """Convert to tuple of (miner_id, Vulnerability).
+        
+        Returns:
+            Tuple[str, Vulnerability]: The miner_id and a Vulnerability instance
+        """
+        # Create base Vulnerability instance from all fields except miner_id
+        vuln_dict = self.model_dump(exclude={'miner_id'})
+        return (self.miner_id, Vulnerability.model_validate(vuln_dict))
 
 # PredictionResponse is the response from the Miner
 class PredictionResponse(pydantic.BaseModel):
