@@ -20,14 +20,18 @@
 
 import os
 import time
+import argparse
 
 # Bittensor
 import bittensor as bt
 
-# import base validator class which takes care of most of the boilerplate
-from bitsec.base.validator import BaseValidatorNeuron
-# Bittensor Validator Template:
+# Logging
+import wandb
+from bitsec import __version__
+
+from neurons.validator_proxy import ValidatorProxy
 from bitsec.validator import forward
+from bitsec.base.validator import BaseValidatorNeuron
 
 
 class Validator(BaseValidatorNeuron):
@@ -42,10 +46,32 @@ class Validator(BaseValidatorNeuron):
     def __init__(self, config=None):
         super(Validator, self).__init__(config=config)
 
+        # Initialize wandb only if not disabled
+        if not self.config.wandb.off and not self.config.wandb.offline:
+            run_name = f'bitsec/validator-{self.uid}-{__version__}'
+            wandb_config = {
+                "uid": self.uid,
+                "validator_hotkey": self.wallet.hotkey.ss58_address,
+                "version": __version__,
+                "type": 'validator',
+                "netuid": self.config.netuid,
+                "subtensor_network": self.config.network,
+            }
+            
+            wandb.init(
+                name=run_name,
+                project=self.config.wandb.project_name,
+                entity=self.config.wandb.entity,
+                config=wandb_config,
+                notes=self.config.wandb.notes,
+                mode="offline" if self.config.wandb.offline else "online"
+            )
+
         bt.logging.info("load_state()")
         self.load_state()
 
-        # bitsec specific
+        self.last_responding_miner_uids = []
+        self.validator_proxy = ValidatorProxy(self)
 
     async def forward(self):
         """
@@ -64,5 +90,5 @@ class Validator(BaseValidatorNeuron):
 if __name__ == "__main__":
     with Validator() as validator:
         while True:
-            bt.logging.info(f"Validator running... {time.time()}")
-            time.sleep(5)
+            bt.logging.info(f"uid {validator.uid} tick")
+            time.sleep(60)

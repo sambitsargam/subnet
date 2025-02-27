@@ -85,6 +85,9 @@ class BaseValidatorNeuron(BaseNeuron):
         self.thread: Union[threading.Thread, None] = None
         self.lock = asyncio.Lock()
 
+        # Initialize set to track first-time miner connections
+        self.seen_miners = set()
+
     def serve_axon(self):
         """Serve axon to enable external connections."""
 
@@ -144,6 +147,18 @@ class BaseValidatorNeuron(BaseNeuron):
             while True:
                 bt.logging.info(f"step({self.step}) block({self.block})")
 
+                # Run validator proxy if port is specified
+                if self.config.proxy.port:
+                    try:
+                        bt.logging.info(f"validator_proxy: {self.validator_proxy}")
+                        self.validator_proxy.get_credentials()
+                        bt.logging.info(
+                            "Validator proxy ping to proxy-client successfully"
+                        )
+                    except Exception as e:
+                        bt.logging.warning(e)
+                        bt.logging.warning("Warning, proxy can't ping to proxy-client.")
+
                 # Run multiple forwards concurrently.
                 self.loop.run_until_complete(self.concurrent_forward())
 
@@ -155,7 +170,7 @@ class BaseValidatorNeuron(BaseNeuron):
                 self.sync()
 
                 self.step += 1
-                time.sleep(60) # run every 60s
+                time.sleep(600) # run every 600s
 
         # If someone intentionally stops the validator, it'll safely terminate operations.
         except KeyboardInterrupt:
@@ -286,9 +301,16 @@ class BaseValidatorNeuron(BaseNeuron):
 
         # Copies state of metagraph before syncing.
         previous_metagraph = copy.deepcopy(self.metagraph)
+        previous_axons = set((axon.ip, axon.port) for axon in previous_metagraph.axons)
 
         # Sync the metagraph.
         self.metagraph.sync(subtensor=self.subtensor)
+        current_axons = set((axon.ip, axon.port) for axon in self.metagraph.axons)
+
+        # Check for new miners that have registered
+        new_axons = current_axons - previous_axons
+        for ip, port in new_axons:
+            bt.logging.info(f"📡 New miner available at {ip}:{port}")
 
         # Check if the metagraph axon info has changed.
         if previous_metagraph.axons == self.metagraph.axons:

@@ -1,6 +1,7 @@
 import os
 import logging
 from logging.handlers import RotatingFileHandler
+from pathlib import Path
 
 EVENTS_LEVEL_NUM = 38
 DEFAULT_LOG_BACKUP_COUNT = 10
@@ -33,3 +34,17 @@ def setup_events_logger(full_path, events_retention_size):
     logger.addHandler(file_handler)
 
     return logger
+
+def shorten_path(path: str) -> str:
+    """Convert absolute paths to relative paths for cleaner test output."""
+    try:
+        return str(Path(path).relative_to(Path.cwd()))
+    except ValueError:
+        return path
+
+def shorten_to_filename(path: str) -> str:
+    """Shorten path to just the filename."""
+    try:
+        return str(Path(path).name)
+    except ValueError:
+        return path

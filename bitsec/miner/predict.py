@@ -1,6 +1,13 @@
-import numpy as np
+from bitsec.protocol import PredictionResponse
+from bitsec.miner.prompt import code_to_vulns
 
-def predict(code: str) -> float:
+## Predicting vulnerabilities is a multifaceted task. Here are some example improvements:
+# - train custom model
+# - use a more powerful foundational model
+# - improve prompt
+# - increase inference time compute
+# - augmented static analysis output
+def predict(code: str) -> PredictionResponse:
     """
     Perform prediction. You may need to modify this if you train a custom model.
 
@@ -8,10 +15,8 @@ def predict(code: str) -> float:
         code (str): The input str is a challenge that either has a severe code vulnerability or does not.
 
     Returns:
-        float: The predicted output value.
+        PredictionResponse: The predicted output value and list of vulnerabilities.
     """
     
 
-    " dummy function that predicts 1 or 0 randomly"
-    # return 1 if np.random.rand() > 0.5 else 0
-    return 1.0
+    return code_to_vulns(code=code)

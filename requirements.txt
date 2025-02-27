@@ -1,8 +1,12 @@
-bittensor>=7
+bittensor-cli==9.0.2
+bittensor==9.0.2
 starlette>=0.30.0
 pydantic>=2
-rich>=13
-pytest>=8
 torch>=2
 numpy>=1
 setuptools>=68
+tenacity>=9
+openai>=1.47
+flaky>=3.8.1
+wandb>=0.19.6
+rich>=13

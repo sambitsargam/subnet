@@ -19,10 +19,12 @@
 
 import time
 import typing
+import argparse
 import bittensor as bt
 
-# Bittensor Miner Template:
-import bitsec
+# Logging
+import wandb
+from bitsec import __version__
 
 # import base miner class which takes care of most of the boilerplate
 from bitsec.base.miner import BaseMinerNeuron
@@ -42,34 +44,61 @@ class Miner(BaseMinerNeuron):
     def __init__(self, config=None):
         super(Miner, self).__init__(config=config)
 
+        # Initialize wandb only if not disabled
+        if not self.config.wandb.off and not self.config.wandb.offline:
+            run_name = f'bitsec/miner-{self.uid}-{__version__}'
+            wandb_config = {
+                "uid": self.uid,
+                "validator_hotkey": self.wallet.hotkey.ss58_address,
+                "version": __version__,
+                "type": 'miner',
+                "netuid": self.config.netuid,
+                "subtensor_network": self.config.network,
+            }
+            
+            wandb.init(
+                name=run_name,
+                project=self.config.wandb.project_name,
+                entity=self.config.wandb.entity,
+                config=wandb_config,
+                notes=self.config.wandb.notes,
+                mode="offline" if self.config.wandb.offline else "online"
+            )
+
     async def forward(
-        self, synapse: bitsec.protocol.CodeSynapse
-    ) -> bitsec.protocol.CodeSynapse:
+        self, synapse: CodeSynapse
+    ) -> CodeSynapse:
         """
         Processes the incoming 'Dummy' synapse by performing a predefined operation on the input data.
         This method should be replaced with actual logic relevant to the miner's purpose.
 
         Args:
-            synapse (bitsec.protocol.Dummy): The synapse object containing the 'dummy_input' data.
+            synapse (CodeSynapse): The synapse object containing the 'code' data.
 
         Returns:
-            bitsec.protocol.Dummy: The synapse object with the 'dummy_output' field set to twice the 'dummy_input' value.
+            CodeSynapse: The synapse object with the 'response' field set to then miner's prediction results.
 
         The 'forward' function is a placeholder and should be overridden with logic that is appropriate for
         the miner's intended operation. This method demonstrates a basic transformation of input data.
         """
         try:
             challenge = synapse.code
-            synapse.prediction = predict(challenge)
+            synapse.response = predict(challenge)
         except Exception as e:
             bt.logging.error("Error performing inference")
             bt.logging.error(e)
+            wandb.log({"miner/inference_error": str(e)})
 
-        bt.logging.info(f"PREDICTION: {synapse.prediction}")
+        bt.logging.info(f"PREDICTION: {synapse.response.prediction}")
+        bt.logging.info(f"VULNERABILITIES: {synapse.response.vulnerabilities}")
+        wandb.log({
+            "miner/prediction": synapse.response.prediction,
+            "miner/vulnerabilities": synapse.response.vulnerabilities
+        })
         return synapse
 
     async def blacklist(
-        self, synapse: bitsec.protocol.CodeSynapse
+        self, synapse: CodeSynapse
     ) -> typing.Tuple[bool, str]:
         """
         Determines whether an incoming request should be blacklisted and thus ignored. Your implementation should
@@ -130,7 +159,7 @@ class Miner(BaseMinerNeuron):
         )
         return False, "Hotkey recognized!"
 
-    async def priority(self, synapse: bitsec.protocol.CodeSynapse) -> float:
+    async def priority(self, synapse: CodeSynapse) -> float:
         """
         The priority function determines the order in which requests are handled. More valuable or higher-priority
         requests are processed before others. You should design your own priority mechanism with care.
@@ -138,7 +167,7 @@ class Miner(BaseMinerNeuron):
         This implementation assigns priority to incoming requests based on the calling entity's stake in the metagraph.
 
         Args:
-            synapse (bitsec.protocol.Dummy): The synapse object that contains metadata about the incoming request.
+            synapse (CodeSynapse): The synapse object that contains metadata about the incoming request.
 
         Returns:
             float: A priority score derived from the stake of the calling entity.
@@ -168,9 +197,10 @@ class Miner(BaseMinerNeuron):
 
     def save_state(self):
         pass
+
 # This is the main function, which runs the miner.
 if __name__ == "__main__":
     with Miner() as miner:
         while True:
-            bt.logging.info(f"Miner running... {time.time()}")
+            bt.logging.info(f"uid {miner.uid} tick")
             time.sleep(5)
