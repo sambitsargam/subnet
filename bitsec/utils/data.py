@@ -147,7 +147,7 @@ Modified code:"""
         # Use the LLM to inject the vulnerability
         response = chat_completion(
             prompt,
-            max_tokens=100000,
+            max_tokens=30000,
             temperature=0.9,
             response_format=NewlyVulnerableCode
         )
