@@ -402,3 +402,29 @@ class BaseValidatorNeuron(BaseNeuron):
         self.step = state["step"]
         self.scores = state["scores"]
         self.hotkeys = state["hotkeys"]
+
+    def cross_validation_scoring(self, miner_results, aggregate_consensus):
+        """
+        Implement cross-validation scoring to compare each miner’s results with the aggregate consensus.
+        """
+        # Placeholder implementation
+        return sum(1 for result in miner_results if result in aggregate_consensus) / len(miner_results)
+
+    def historical_accuracy_weighting(self, miner_id, performance_history):
+        """
+        Add historical accuracy weighting to prioritize miners with consistent past performance.
+        """
+        # Placeholder implementation
+        return sum(performance_history[miner_id]) / len(performance_history[miner_id])
+
+    def vulnerability_classification_bonus(self, vulnerability_class):
+        """
+        Include vulnerability classification bonus for identifying novel or severe classes.
+        """
+        # Placeholder implementation
+        bonus_mapping = {
+            "novel": 1.5,
+            "severe": 2.0,
+            "common": 1.0
+        }
+        return bonus_mapping.get(vulnerability_class, 1.0)
