@@ -69,6 +69,10 @@ def check_config(cls, config: "bt.Config"):
         raise ValueError("historical_accuracy_weight must be between 0 and 1")
     if not (0 <= config.neuron.vulnerability_classification_bonus_weight <= 1):
         raise ValueError("vulnerability_classification_bonus_weight must be between 0 and 1")
+    if not (0 <= config.neuron.dynamic_identity_stake <= 100):
+        raise ValueError("dynamic_identity_stake must be between 0 and 100")
+    if not (0 <= config.neuron.participation_weight <= 10):
+        raise ValueError("participation_weight must be between 0 and 10")
 
 
 def add_args(cls, parser):
@@ -136,6 +140,20 @@ def add_args(cls, parser):
         default="",
     )
 
+    parser.add_argument(
+        "--neuron.dynamic_identity_stake",
+        type=float,
+        help="Dynamic identity stake for increased participation weight.",
+        default=0.0,
+    )
+
+    parser.add_argument(
+        "--neuron.participation_weight",
+        type=float,
+        help="Participation weight based on dynamic identity stake.",
+        default=1.0,
+    )
+
 
 def add_miner_args(cls, parser):
     """Add miner specific arguments to the parser."""
@@ -173,6 +191,20 @@ def add_miner_args(cls, parser):
         type=str,
         default="bitsecai",
         help="Wandb entity to log to.",
+    )
+
+    parser.add_argument(
+        "--neuron.dynamic_identity_stake",
+        type=float,
+        help="Dynamic identity stake for increased participation weight.",
+        default=0.0,
+    )
+
+    parser.add_argument(
+        "--neuron.participation_weight",
+        type=float,
+        help="Participation weight based on dynamic identity stake.",
+        default=1.0,
     )
 
 
