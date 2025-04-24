@@ -19,15 +19,16 @@
 
 import random
 import time
-
+import asyncio
 import wandb
 import bittensor as bt
 
-from bitsec.protocol import prepare_code_synapse
-from bitsec.validator.reward import get_rewards
+from bitsec.protocol import prepare_code_synapse, PredictionResponse, Vulnerability
+from bitsec.validator.reward import get_rewards, cross_validation_scoring, historical_accuracy_weighting, vulnerability_classification_bonus
 from bitsec.utils.data import create_challenge
 from bitsec.utils.uids import get_random_uids
-
+from bitsec.utils.llm import chat_completion
+from bitsec.validator.make_report import format_vulnerability_to_report
 
 async def forward(self):
     """
@@ -96,6 +97,18 @@ async def forward(self):
     # Log the results for monitoring purposes.
     bt.logging.info(f"Received {len(responses)} responses")
 
+    # Normalize miner outputs
+    normalized_responses = [normalize_response(response) for response in responses]
+
+    # Group and deduplicate findings using NLP techniques
+    grouped_findings = group_and_deduplicate_findings(normalized_responses)
+
+    # Rank findings based on severity, consensus strength, and historical accuracy
+    ranked_findings = rank_findings(grouped_findings)
+
+    # Generate a human-readable and machine-actionable report in JSON and PDF formats
+    report_json, report_pdf = generate_report(ranked_findings)
+
     # Log the cross-validation score, historical accuracy, and vulnerability classification bonus for each miner
     for response in responses:
         wandb.log({
@@ -111,3 +124,55 @@ async def forward(self):
     # bt.logging.info(f"Scored responses: {rewards}")
     # Update the scores based on the rewards. You may want to define your own update_scores function for custom behavior.
     self.update_scores(rewards, miner_uids)
+
+def normalize_response(response: PredictionResponse) -> PredictionResponse:
+    """
+    Normalize the miner response.
+
+    Args:
+        response (PredictionResponse): The response to normalize.
+
+    Returns:
+        PredictionResponse: The normalized response.
+    """
+    # Implement normalization logic here
+    return response
+
+def group_and_deduplicate_findings(responses: List[PredictionResponse]) -> List[Vulnerability]:
+    """
+    Group and deduplicate findings using NLP techniques.
+
+    Args:
+        responses (List[PredictionResponse]): The responses to group and deduplicate.
+
+    Returns:
+        List[Vulnerability]: The grouped and deduplicated findings.
+    """
+    # Implement grouping and deduplication logic here
+    return []
+
+def rank_findings(findings: List[Vulnerability]) -> List[Vulnerability]:
+    """
+    Rank findings based on severity, consensus strength, and historical accuracy.
+
+    Args:
+        findings (List[Vulnerability]): The findings to rank.
+
+    Returns:
+        List[Vulnerability]: The ranked findings.
+    """
+    # Implement ranking logic here
+    return []
+
+def generate_report(findings: List[Vulnerability]) -> (str, str):
+    """
+    Generate a human-readable and machine-actionable report in JSON and PDF formats.
+
+    Args:
+        findings (List[Vulnerability]): The findings to include in the report.
+
+    Returns:
+        (str, str): The report in JSON and PDF formats.
+    """
+    # Implement report generation logic here
+    return "", ""
