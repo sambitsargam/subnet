@@ -138,3 +138,26 @@ def get_rewards(
     return np.array(
         [reward(expected_response, response) for response in responses]
     )
+
+def cross_validation_scoring(miner_results, aggregate_consensus):
+    """
+    Implement cross-validation scoring to compare each miner’s results with the aggregate consensus.
+    """
+    return sum(1 for result in miner_results if result in aggregate_consensus) / len(miner_results)
+
+def historical_accuracy_weighting(miner_id, performance_history):
+    """
+    Add historical accuracy weighting to prioritize miners with consistent past performance.
+    """
+    return sum(performance_history[miner_id]) / len(performance_history[miner_id])
+
+def vulnerability_classification_bonus(vulnerability_class):
+    """
+    Include vulnerability classification bonus for identifying novel or severe classes.
+    """
+    bonus_mapping = {
+        "novel": 1.5,
+        "severe": 2.0,
+        "common": 1.0
+    }
+    return bonus_mapping.get(vulnerability_class, 1.0)
