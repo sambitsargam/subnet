@@ -2,6 +2,8 @@ from bitsec.utils.llm import chat_completion
 from bitsec.protocol import Vulnerability
 from typing import List
 import bittensor as bt
+import json
+from fpdf import FPDF
 
 VULNERABILITY_TO_REPORT_TEMPLATE = """You are an expert in economic security analysis for decentralized computing systems, specifically for the Bittensor network. 
 
@@ -77,3 +79,46 @@ def format_vulnerability_to_report(
     except Exception as e:
         bt.logging.error(f"Failed to format analysis: {e}")
         raise
+
+def generate_report_json(findings: List[Vulnerability]) -> str:
+    """
+    Generate a human-readable and machine-actionable report in JSON format.
+
+    Args:
+        findings (List[Vulnerability]): The findings to include in the report.
+
+    Returns:
+        str: The report in JSON format.
+    """
+    report = {
+        "findings": [vulnerability.model_dump() for vulnerability in findings]
+    }
+    return json.dumps(report, indent=4)
+
+def generate_report_pdf(findings: List[Vulnerability], output_path: str):
+    """
+    Generate a human-readable and machine-actionable report in PDF format.
+
+    Args:
+        findings (List[Vulnerability]): The findings to include in the report.
+        output_path (str): The path to save the PDF report.
+    """
+    pdf = FPDF()
+    pdf.add_page()
+    pdf.set_font("Arial", size=12)
+
+    for i, vulnerability in enumerate(findings, 1):
+        pdf.cell(200, 10, txt=f"{i}. {vulnerability.category}", ln=True, align='L')
+        pdf.multi_cell(0, 10, txt=vulnerability.description)
+        pdf.ln(5)
+        pdf.cell(200, 10, txt="Vulnerable Code:", ln=True, align='L')
+        pdf.multi_cell(0, 10, txt=vulnerability.vulnerable_code)
+        pdf.ln(5)
+        pdf.cell(200, 10, txt="Code to Exploit:", ln=True, align='L')
+        pdf.multi_cell(0, 10, txt=vulnerability.code_to_exploit)
+        pdf.ln(5)
+        pdf.cell(200, 10, txt="Rewritten Code to Fix Vulnerability:", ln=True, align='L')
+        pdf.multi_cell(0, 10, txt=vulnerability.rewritten_code_to_fix_vulnerability)
+        pdf.ln(10)
+
+    pdf.output(output_path)
