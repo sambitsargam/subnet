@@ -88,6 +88,10 @@ class BaseValidatorNeuron(BaseNeuron):
         # Initialize set to track first-time miner connections
         self.seen_miners = set()
 
+        # Initialize dynamic identity staking parameters
+        self.dynamic_stake = 0
+        self.participation_weight = 1.0
+
     def serve_axon(self):
         """Serve axon to enable external connections."""
 
@@ -171,6 +175,9 @@ class BaseValidatorNeuron(BaseNeuron):
 
                 self.step += 1
                 time.sleep(600) # run every 600s
+
+                # Update participation weight based on dynamic staking
+                self.update_participation_weight()
 
         # If someone intentionally stops the validator, it'll safely terminate operations.
         except KeyboardInterrupt:
@@ -428,3 +435,10 @@ class BaseValidatorNeuron(BaseNeuron):
             "common": 1.0
         }
         return bonus_mapping.get(vulnerability_class, 1.0)
+
+    def update_participation_weight(self):
+        """
+        Update the participation weight based on the dynamic stake.
+        """
+        self.participation_weight = 1.0 + (self.dynamic_stake / 1000.0)
+        bt.logging.info(f"Updated participation weight to {self.participation_weight} based on dynamic stake {self.dynamic_stake}")
